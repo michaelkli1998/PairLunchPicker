@@ -55,6 +55,9 @@ const addColonToTime = (time: string) => {
       parseInt(time.substring(0, 2)).toString() + ":" + time.substring(2) + "pm"
     );
   }
+  if (time.substring(0,2) === "00") {
+    return "12:00am";
+  }
   if (time.substring(0, 1) === "0") {
     return time.substring(1, 2) + ":" + time.substring(2) + "am";
   }
