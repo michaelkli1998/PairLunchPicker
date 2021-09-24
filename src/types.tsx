@@ -58,3 +58,23 @@ export type yelpBusinessResponse = {
     }
   ];
 };
+
+export type yelpReviewResponse = {
+  total: number;
+  possible_languages: string[];
+  reviews: [
+    {
+      id: string;
+      text: string;
+      url: string;
+      rating: number;
+      time_created: string;
+      user: {
+        id: string;
+        profile_url: string;
+        name: string;
+        image_url: string;
+      };
+    }
+  ];
+};

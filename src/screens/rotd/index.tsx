@@ -5,6 +5,7 @@ import {
   Dimensions,
   ImageBackground,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,7 +13,7 @@ import {
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { Button } from "react-native-paper";
-import { yelpBusinessResponse } from "../../types";
+import { yelpBusinessResponse, yelpReviewResponse } from "../../types";
 import { Icon } from "react-native-elements";
 
 const config = {
@@ -55,7 +56,7 @@ const addColonToTime = (time: string) => {
       parseInt(time.substring(0, 2)).toString() + ":" + time.substring(2) + "pm"
     );
   }
-  if (time.substring(0,2) === "00") {
+  if (time.substring(0, 2) === "00") {
     return "12:00am";
   }
   if (time.substring(0, 1) === "0") {
@@ -67,18 +68,79 @@ const addColonToTime = (time: string) => {
 //@ts-ignore
 export const ROTD: FC = ({ route }) => {
   const [restaurant, setRestaurants] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [isLoadingBus, setLoadingBus] = useState(true);
+  const [isLoadingRev, setLoadingRev] = useState(true);
   useEffect(() => {
     axios
       .get("https://api.yelp.com/v3/businesses/" + route.params.id, config)
       .then((response) => {
         setRestaurants(response.data);
+        setLoadingBus(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(
+        "https://api.yelp.com/v3/businesses/" + route.params.id + "/reviews",
+        config
+      )
+      .then((response) => {
+        setReviews(response.data);
+        setLoadingRev(false);
       });
   }, []);
 
   const business: yelpBusinessResponse =
     restaurant as unknown as yelpBusinessResponse;
 
-  console.log(business.is_closed);
+  const ratings: yelpReviewResponse = reviews as unknown as yelpReviewResponse;
+
+  if (isLoadingBus || isLoadingRev) {
+    return <Text>Loading...</Text>;
+  }
+
+  const renderStars = (numStars: number) => {
+    var finalStarString = "";
+    console.log(numStars);
+    var i = 0;
+    for (i = 0; i < 5; i++) {
+      if (i < numStars) {
+        finalStarString += "★";
+      } else {
+        finalStarString += "☆";
+      }
+    }
+    return finalStarString;
+  };
+
+  const renderRatings = () => {
+    var i = 0;
+    var rows = [];
+    if (ratings.reviews) {
+      for (i = 0; i < ratings.total; i++) {
+        if (ratings.reviews[i]) {
+          rows.push(
+            <View>
+              <Text key={"name" + i} style={styles.nameLeftSmall}>
+                {ratings.reviews[i].user.name}
+              </Text>
+              <Text key={"star" + i} style={styles.starLeftSmall}>
+                {renderStars(ratings.reviews[i].rating)}
+              </Text>
+              <Text key={i} style={styles.reviewsLeftSmall}>
+                {ratings.reviews[i].text}
+              </Text>
+            </View>
+          );
+        } else {
+          break;
+        }
+      }
+    }
+    return rows;
+  };
 
   return (
     <SafeAreaView>
@@ -157,6 +219,18 @@ export const ROTD: FC = ({ route }) => {
                 away
               </Text>
             </View>
+            <View
+              style={{
+                borderBottomColor: "grey",
+                borderBottomWidth: 0.5,
+                marginHorizontal: 15,
+                marginTop: 16,
+              }}
+            />
+            <ScrollView>
+              <Text style={styles.titleReviews}>Reviews</Text>
+              <View style={styles.ratingsContainer}>{renderRatings()}</View>
+            </ScrollView>
           </View>
         </View>
       </View>
@@ -165,6 +239,7 @@ export const ROTD: FC = ({ route }) => {
 };
 
 const SLIDER_WIDTH = Dimensions.get("window").width;
+const SLIDER_HEIGHT = Dimensions.get("window").height;
 const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.9);
 const ITEM_HEIGHT = Math.round((ITEM_WIDTH * 3) / 4);
 const styles = StyleSheet.create({
@@ -198,6 +273,32 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginRight: 5,
   },
+  nameLeftSmall: {
+    fontSize: 15,
+    fontWeight: "500",
+    textAlign: "left",
+    color: "black",
+    marginTop: 10,
+    marginLeft: 15,
+    marginRight: 5,
+  },
+  reviewsLeftSmall: {
+    fontSize: 15,
+    fontWeight: "400",
+    textAlign: "left",
+    color: "black",
+    marginVertical: 5,
+    marginHorizontal: 15,
+  },
+  starLeftSmall: {
+    fontSize: 15,
+    fontWeight: "500",
+    textAlign: "left",
+    color: "#fd4f57",
+    marginTop: 5,
+    marginLeft: 13,
+    marginRight: 5,
+  },
   titleName: {
     fontSize: 30,
     fontWeight: "600",
@@ -205,6 +306,14 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     color: "black",
     marginTop: 10,
+  },
+  titleReviews: {
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "left",
+    marginLeft: 15,
+    color: "black",
+    marginTop: 15,
   },
   contentView: {
     borderTopColor: "black",
@@ -245,7 +354,7 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#F1F1F1",
     borderRadius: 10,
-    top: ITEM_HEIGHT - 40,
+    top: ITEM_HEIGHT - 80,
   },
   openSmall: {
     color: "green",
@@ -267,5 +376,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-start",
     paddingHorizontal: 15,
+  },
+  flexColContainer: {
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    paddingHorizontal: 15,
+    height: 200,
+    backgroundColor: "red",
+  },
+  ratingsContainer: {
+    height: SLIDER_HEIGHT * 0.8,
   },
 });
