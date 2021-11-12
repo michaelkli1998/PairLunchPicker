@@ -1,35 +1,39 @@
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import {
   Dimensions,
   ImageBackground,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Carousel from "react-native-snap-carousel";
+import Spinner from "react-native-spinkit";
+import { getAddress } from "../../screens/home/helpers";
 
-export const YelpCarousel: React.FC = () => {
+type Props = { location?: string };
+
+export const YelpCarousel: FC<Props> = (props) => {
   const [isLoading, setLoading] = useState(true);
   var RandomNumber = Math.floor(Math.random() * 50 - 1) + 1;
-  const [config, setConfig] = useState({
+
+  const config = {
     headers: {
       Authorization:
         "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
     },
     params: {
       term: "restaurant",
-      location: "206 S 5th Ave #300, Ann Arbor, MI 48104",
+      location: getAddress(props.location),
       radius: 1609,
       sort_by: "best_match",
+      offset: RandomNumber,
     },
-  });
+  };
   const [restaurants, setRestaurants] = useState([]);
-  const [text, onChangeText] = React.useState("");
   const SLIDER_WIDTH = Dimensions.get("window").width;
   const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.8);
   const ITEM_HEIGHT = Math.round((ITEM_WIDTH * 3) / 4);
@@ -41,31 +45,31 @@ export const YelpCarousel: React.FC = () => {
         setRestaurants(response.data.businesses);
         setLoading(false);
       });
-  }, [config]);
+  }, [props.location]);
 
-  const onSubmit = () => {
-    var tempConfig = {
-      headers: {
-        Authorization:
-          "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
-      },
-      params: {
-        term: "restaurant",
-        location: "206 S 5th Ave #300, Ann Arbor, MI 48104",
-        radius: 1609,
-        sort_by: "best_match",
-      },
-    };
-    tempConfig.params.term = text;
-    setConfig(tempConfig);
-  };
+  // const onSubmit = () => {
+  //   var tempConfig = {
+  //     headers: {
+  //       Authorization:
+  //         "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
+  //     },
+  //     params: {
+  //       term: "restaurant",
+  //       location: "206 S 5th Ave #300, Ann Arbor, MI 48104",
+  //       radius: 1609,
+  //       sort_by: "best_match",
+  //     },
+  //   };
+  //   tempConfig.params.term = text;
+  //   setConfig(tempConfig);
+  // };
 
   const _renderItem = ({ item, index }) => {
     return (
       <TouchableOpacity
         onPress={() =>
           //@ts-ignore
-          navigation.navigate("ROTD", {
+          navigation.navigate("Detailed Restaurant View", {
             id: item.id,
             restaurant: item,
           })
@@ -90,7 +94,17 @@ export const YelpCarousel: React.FC = () => {
     );
   };
   if (isLoading) {
-    return <Text>Loading...</Text>;
+    return (
+      <View style={{ height: 200, justifyContent: "center" }}>
+        <Spinner
+          isVisible={true}
+          size={40}
+          type={"ThreeBounce"}
+          color={"#fd4f57"}
+          style={{ alignSelf: "center" }}
+        />
+      </View>
+    );
   }
   return (
     <View>

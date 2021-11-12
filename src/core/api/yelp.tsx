@@ -1,66 +1,165 @@
-import React, { Component, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import React, { FC, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ImageBackground,
   Dimensions,
+  ImageBackground,
   StyleSheet,
+  Text,
   TouchableOpacity,
 } from "react-native";
-import axios from "axios";
-import { useEffect } from "react";
 import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import Spinner from "react-native-spinkit";
+import { getAddress } from "../../screens/home/helpers";
+import { getData, storeData } from "./helpers";
 
-const config = {
-  headers: {
-    Authorization:
-      "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
-  },
-  params: {
-    term: "Restaurants",
-    location: "206 S 5th Ave #300, Ann Arbor, MI 48104",
-  },
-};
+type Props = { location?: string };
 
-export const Yelp: React.FC = () => {
+export const Yelp: FC<Props> = (props) => {
   const [isLoading, setLoading] = useState(true);
-  const [restaurants, setRestaurants] = useState([]);
   const navigation = useNavigation();
+  const [todaysRestaurant, setTodaysRestaurant] = useState(null);
+
+  const config = {
+    headers: {
+      Authorization:
+        "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
+    },
+    params: {
+      term: "Restaurants",
+      location: getAddress(props.location),
+      limit: 50,
+      open_now: true,
+      radius: 2000,
+    },
+  };
+
   useEffect(() => {
+    const today = getCurrentDate();
     axios
       .get("https://api.yelp.com/v3/businesses/search", config)
       .then((response) => {
-        setRestaurants(response.data.businesses);
+        const indexedRestaurants = response.data.businesses.reduce(
+          (accumulator, restaurant) => ({
+            ...accumulator,
+            [restaurant.id]: restaurant,
+          })
+        );
+        const restaurants = indexedRestaurants;
+
+        getData().then((restaurantDateMap = {}) => {
+          if (!restaurantDateMap) {
+            storeData({}).then(() => {
+              getData().then((restaurantDateMap = {}) => {
+                const currentRestaurant = restaurantDateMap[today];
+                if (currentRestaurant && currentRestaurant[props.location]) {
+                  const restaurant =
+                    indexedRestaurants[currentRestaurant[props.location]];
+                  if (restaurant) {
+                    setTodaysRestaurant(restaurant);
+                    return;
+                  }
+                }
+                while (1) {
+                  const randomNumber = Math.floor(
+                    Math.random() * (Object.keys(restaurants).length - 16 + 1) +
+                      16
+                  );
+
+                  const potentialRestaurantId =
+                    Object.keys(restaurants)[randomNumber];
+                  const isAlreadyShown = !!Object.values(
+                    restaurantDateMap
+                  ).filter(
+                    (location) =>
+                      location[props.location] == potentialRestaurantId
+                  )[0];
+                  if (!isAlreadyShown) {
+                    setTodaysRestaurant(restaurants[potentialRestaurantId]);
+                    storeData({
+                      ...restaurantDateMap,
+                      [today]: {
+                        ...restaurantDateMap[today],
+                        [props.location]: restaurants[potentialRestaurantId].id,
+                      },
+                    }).catch((e) => console.log(e));
+                    break;
+                  }
+                }
+              });
+            });
+          } else {
+            const currentRestaurant = restaurantDateMap[today];
+            if (currentRestaurant && currentRestaurant[props.location]) {
+              const restaurant =
+                indexedRestaurants[currentRestaurant[props.location]];
+              if (restaurant) {
+                setTodaysRestaurant(restaurant);
+                return;
+              }
+            }
+            while (1) {
+              const randomNumber = Math.floor(
+                Math.random() * (Object.keys(restaurants).length - 16 + 1) + 16
+              );
+
+              const potentialRestaurantId =
+                Object.keys(restaurants)[randomNumber];
+              const isAlreadyShown = !!Object.values(restaurantDateMap).filter(
+                (location) => location[props.location] == potentialRestaurantId
+              )[0];
+              if (!isAlreadyShown) {
+                setTodaysRestaurant(restaurants[potentialRestaurantId]);
+                storeData({
+                  ...restaurantDateMap,
+                  [today]: {
+                    ...restaurantDateMap[today],
+                    [props.location]: restaurants[potentialRestaurantId].id,
+                  },
+                }).catch((e) => console.log(e));
+                break;
+              }
+            }
+          }
+        });
+
         setLoading(false);
       });
-  }, []);
-  if (isLoading) {
-    return <Text>Loading...</Text>;
+  }, [props.location]);
+
+  if (!todaysRestaurant) {
+    return (
+      <Spinner
+        isVisible={true}
+        size={40}
+        type={"ThreeBounce"}
+        color={"#fd4f57"}
+      />
+    );
   }
-  var RandomNumber = Math.floor(Math.random() * restaurants.length - 1) + 1;
   return (
     <TouchableOpacity
       style={styles.touchableContainer}
       onPress={() =>
-        navigation.navigate("ROTD", {
-          id: restaurants[RandomNumber].id,
-          restaurant: restaurants[RandomNumber],
+        //@ts-ignore
+        navigation.navigate("Detailed Restaurant View", {
+          id: todaysRestaurant.id,
+          restaurant: todaysRestaurant,
         })
       }
     >
       <ImageBackground
         imageStyle={styles.imageStyle}
         style={styles.itemContainer}
-        source={{ uri: restaurants[RandomNumber].image_url }}
+        source={{ uri: todaysRestaurant.image_url }}
       >
         <LinearGradient
           style={styles.imageView}
           colors={["transparent", "black"]}
         >
-          <Text style={styles.text}>{restaurants[RandomNumber].name}</Text>
+          <Text style={styles.text}>{todaysRestaurant.name}</Text>
           <Text style={styles.text}>
-            {(restaurants[RandomNumber].distance / 1609.344).toFixed(2)} miles
+            {(todaysRestaurant.distance / 1609.344).toFixed(2)} miles
           </Text>
         </LinearGradient>
       </ImageBackground>
@@ -111,3 +210,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
   },
 });
+
+export const getCurrentDate = () => {
+  return new Date().toISOString().split("T")[0];
+};

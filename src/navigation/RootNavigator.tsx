@@ -1,18 +1,23 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import * as React from "react";
 import { HomeScreen } from "../screens/home";
-import { ROTD } from "../screens/rotd";
+import { DetailedRestaurantView } from "../screens/drv";
+import { TabNavigator } from "./BottomTabNavigator";
 
 const RootStack = createStackNavigator();
 
 export const RootNavigator: React.FC = () => {
   return (
-    <RootStack.Navigator
-      screenOptions={{ headerShown: true }}
-      initialRouteName={"Home"}
-    >
+    <RootStack.Navigator>
       <RootStack.Screen
-        name={"Home"}
+        name={"Back"}
+        component={TabNavigator}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <RootStack.Screen
+        name={"Launch"}
         component={HomeScreen}
         options={{
           title: "",
@@ -27,10 +32,10 @@ export const RootNavigator: React.FC = () => {
         }}
       />
       <RootStack.Screen
-        name={"ROTD"}
-        component={ROTD}
+        name={"Detailed Restaurant View"}
+        component={DetailedRestaurantView}
         options={{
-          title: "",
+          title: "Let's Eat!",
           headerStyle: {
             backgroundColor: "#fd4f57",
           },
