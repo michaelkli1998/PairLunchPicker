@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { FC, useEffect, useState } from "react";
 import {
+  Alert,
   Dimensions,
   ImageBackground,
   Linking,
@@ -108,8 +109,11 @@ export const DetailedRestaurantView: FC = ({ route }) => {
       android: "geo:" + latitude + "," + longitude + "?q=" + label,
     });
 
-    console.log(url);
     Linking.openURL(url);
+  };
+
+  const callNumber = (phone) => {
+    Linking.openURL(`tel:${phone}`).catch((e) => console.warn(e));
   };
 
   const ratings: yelpReviewResponse = reviews as unknown as yelpReviewResponse;
@@ -174,7 +178,11 @@ export const DetailedRestaurantView: FC = ({ route }) => {
           <ImageBackground
             imageStyle={styles.imageStyle}
             style={styles.itemContainer}
-            source={{ uri: business.image_url }}
+            source={{
+              uri: business.image_url
+                ? business.image_url
+                : "https://st3.depositphotos.com/23594922/31822/v/600/depositphotos_318221368-stock-illustration-missing-picture-page-for-website.jpg",
+            }}
           ></ImageBackground>
           <View style={styles.modalUp}>
             <Text style={styles.titleName}>{business.name}</Text>
@@ -225,6 +233,21 @@ export const DetailedRestaurantView: FC = ({ route }) => {
                     </Text>
                   )}
               </View>
+            )}
+            {business.phone !== "" && (
+              <TouchableOpacity
+                onPress={() => callNumber(business.phone)}
+                style={styles.flexRowContainer}
+              >
+                <Icon
+                  size={24}
+                  name="phone"
+                  type="font-awesome"
+                  color="#fd4f57"
+                  style={{ marginTop: 10, marginRight: 8 }}
+                />
+                <Text style={styles.title}>{business.display_phone}</Text>
+              </TouchableOpacity>
             )}
             <TouchableOpacity
               onPress={openMaps}
@@ -335,7 +358,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "600",
     textAlign: "left",
-    marginLeft: 15,
+    marginHorizontal: 15,
     color: "black",
     marginTop: 10,
   },

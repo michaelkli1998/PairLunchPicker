@@ -2,6 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import React, { FC, useEffect, useState } from "react";
 import {
+  AppState,
   Dimensions,
   ImageBackground,
   StyleSheet,
@@ -20,6 +21,8 @@ export const Yelp: FC<Props> = (props) => {
   const navigation = useNavigation();
   const [todaysRestaurant, setTodaysRestaurant] = useState(null);
 
+  const [appState, setAppState] = useState("");
+
   const config = {
     headers: {
       Authorization:
@@ -29,13 +32,23 @@ export const Yelp: FC<Props> = (props) => {
       term: "Restaurants",
       location: getAddress(props.location),
       limit: 50,
-      open_now: true,
       radius: 2000,
     },
   };
 
   useEffect(() => {
-    const today = getCurrentDate();
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      setAppState(nextAppState);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const today = getCurrentDate();
+
+  useEffect(() => {
     axios
       .get("https://api.yelp.com/v3/businesses/search", config)
       .then((response) => {
@@ -48,84 +61,42 @@ export const Yelp: FC<Props> = (props) => {
         const restaurants = indexedRestaurants;
 
         getData().then((restaurantDateMap = {}) => {
-          if (!restaurantDateMap) {
-            storeData({}).then(() => {
-              getData().then((restaurantDateMap = {}) => {
-                const currentRestaurant = restaurantDateMap[today];
-                if (currentRestaurant && currentRestaurant[props.location]) {
-                  const restaurant =
-                    indexedRestaurants[currentRestaurant[props.location]];
-                  if (restaurant) {
-                    setTodaysRestaurant(restaurant);
-                    return;
-                  }
-                }
-                while (1) {
-                  const randomNumber = Math.floor(
-                    Math.random() * (Object.keys(restaurants).length - 16 + 1) +
-                      16
-                  );
-
-                  const potentialRestaurantId =
-                    Object.keys(restaurants)[randomNumber];
-                  const isAlreadyShown = !!Object.values(
-                    restaurantDateMap
-                  ).filter(
-                    (location) =>
-                      location[props.location] == potentialRestaurantId
-                  )[0];
-                  if (!isAlreadyShown) {
-                    setTodaysRestaurant(restaurants[potentialRestaurantId]);
-                    storeData({
-                      ...restaurantDateMap,
-                      [today]: {
-                        ...restaurantDateMap[today],
-                        [props.location]: restaurants[potentialRestaurantId].id,
-                      },
-                    }).catch((e) => console.log(e));
-                    break;
-                  }
-                }
-              });
-            });
-          } else {
-            const currentRestaurant = restaurantDateMap[today];
-            if (currentRestaurant && currentRestaurant[props.location]) {
-              const restaurant =
-                indexedRestaurants[currentRestaurant[props.location]];
-              if (restaurant) {
-                setTodaysRestaurant(restaurant);
-                return;
-              }
+          const currentRestaurant = restaurantDateMap[today];
+          if (currentRestaurant && currentRestaurant[props.location]) {
+            const restaurant =
+              indexedRestaurants[currentRestaurant[props.location]];
+            if (restaurant) {
+              setTodaysRestaurant(restaurant);
+              return;
             }
-            while (1) {
-              const randomNumber = Math.floor(
-                Math.random() * (Object.keys(restaurants).length - 16 + 1) + 16
-              );
+          }
+          while (1) {
+            const randomNumber = Math.floor(
+              Math.random() * (Object.keys(restaurants).length - 16 + 1) + 16
+            );
 
-              const potentialRestaurantId =
-                Object.keys(restaurants)[randomNumber];
-              const isAlreadyShown = !!Object.values(restaurantDateMap).filter(
-                (location) => location[props.location] == potentialRestaurantId
-              )[0];
-              if (!isAlreadyShown) {
-                setTodaysRestaurant(restaurants[potentialRestaurantId]);
-                storeData({
-                  ...restaurantDateMap,
-                  [today]: {
-                    ...restaurantDateMap[today],
-                    [props.location]: restaurants[potentialRestaurantId].id,
-                  },
-                }).catch((e) => console.log(e));
-                break;
-              }
+            const potentialRestaurantId =
+              Object.keys(restaurants)[randomNumber];
+            const isAlreadyShown = !!Object.values(restaurantDateMap).filter(
+              (location) => location[props.location] == potentialRestaurantId
+            )[0];
+            if (!isAlreadyShown) {
+              setTodaysRestaurant(restaurants[potentialRestaurantId]);
+              storeData({
+                ...restaurantDateMap,
+                [today]: {
+                  ...restaurantDateMap[today],
+                  [props.location]: restaurants[potentialRestaurantId].id,
+                },
+              }).catch((e) => console.log(e));
+              break;
             }
           }
         });
 
         setLoading(false);
       });
-  }, [props.location]);
+  }, [props.location, today]);
 
   if (!todaysRestaurant) {
     return (
@@ -168,7 +139,7 @@ export const Yelp: FC<Props> = (props) => {
 };
 
 const SLIDER_WIDTH = Dimensions.get("window").width;
-const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.9);
+const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.8);
 const ITEM_HEIGHT = Math.round((ITEM_WIDTH * 3) / 4);
 const styles = StyleSheet.create({
   itemContainer: {
@@ -186,7 +157,7 @@ const styles = StyleSheet.create({
   },
   touchableContainer: {
     width: "100%",
-    height: "100%",
+    height: ITEM_HEIGHT,
   },
   imageStyle: {
     width: "100%",

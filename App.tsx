@@ -6,6 +6,9 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { storeData } from "./src/core/api/helpers";
 import { getCurrentDate } from "./src/core/api/yelp";
 import { TabNavigator } from "./src/navigation/BottomTabNavigator";
+import SystemNavigationBar from "react-native-system-navigation-bar";
+
+SystemNavigationBar.navigationHide();
 
 export default function App() {
   return (

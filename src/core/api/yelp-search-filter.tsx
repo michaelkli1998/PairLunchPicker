@@ -14,8 +14,10 @@ import {
   Text,
   useWindowDimensions,
   View,
+  Image,
 } from "react-native";
 import { Icon } from "react-native-elements";
+import { ScreenHeight } from "react-native-elements/dist/helpers";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Modal from "react-native-modal";
@@ -51,6 +53,8 @@ export const YelpSearchFilter: FC<Props> = (props) => {
   const [filterCategory, setFilterCategory] = useState(filterCategories.price);
 
   const searchRef = useRef<SearchBar>();
+
+  const flatListRef = useRef<FlatList>();
 
   const fadeIn = () => {
     Animated.timing(fadeAnimation, {
@@ -108,50 +112,45 @@ export const YelpSearchFilter: FC<Props> = (props) => {
   };
   const navigation = useNavigation();
 
-  const [config, setConfig] = useState({
-    headers: {
-      Authorization:
-        "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
-    },
-    params: {
-      term: "",
-      location: getAddress(props.location),
-      radius: 1609,
-      sort_by: "best_match",
-      limit: 0,
-      open_now: true,
-    },
-  });
-
-  const onChangeSearch = (query) => {
-    setSearchQuery(query);
-  };
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    console.log("called first");
-    axios
-      .get("https://api.yelp.com/v3/businesses/search", config)
-      .then((response) => {
-        setRestaurants(response.data.businesses);
-        setLoading(false);
-        setInitialLoad(true);
-      });
+    if (config !== null) {
+      axios
+        .get("https://api.yelp.com/v3/businesses/search", config)
+        .then((response) => {
+          setRestaurants(response.data.businesses);
+          const tempRestaurants = response.data.businesses;
+          if (tempRestaurants.length === 0) {
+            setInitialLoad(false);
+          } else {
+            setInitialLoad(true);
+          }
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
   }, [config]);
 
   useEffect(() => {
-    console.log("called second");
-    axios
-      .get("https://api.yelp.com/v3/businesses/search", config)
-      .then((response) => {
-        setRestaurants(response.data.businesses);
-        onSubmit();
-        setLoading(false);
-      });
+    if (config !== null) {
+      axios
+        .get("https://api.yelp.com/v3/businesses/search", config)
+        .then((response) => {
+          setRestaurants(response.data.businesses);
+          onSubmit();
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
   }, [props.location]);
 
   useEffect(() => {
     if (searchQuery === "") {
       setInitialLoad(false);
+      setConfig(null);
     }
   }, [searchQuery]);
 
@@ -166,18 +165,19 @@ export const YelpSearchFilter: FC<Props> = (props) => {
         location: getAddress(props.location),
         radius: 1609,
         sort_by: "best_match",
-        limit: 20,
+        limit: 50,
         open_now: true,
       },
     };
     if (searchQuery === "") {
-      tempConfig.params.term = "--------";
+      setLoading(true);
+      setConfig(null);
       setInitialLoad(false);
     } else {
       tempConfig.params.term = searchQuery;
+      setLoading(true);
+      setConfig(tempConfig);
     }
-    setLoading(true);
-    setConfig(tempConfig);
   };
 
   const _renderItem = ({ item, index }) => {
@@ -249,7 +249,9 @@ export const YelpSearchFilter: FC<Props> = (props) => {
             showsCancelButtonWhileEditing={false}
             text={searchQuery}
             onChangeText={setSearchQuery}
-            onSearchButtonPress={onSubmit}
+            onSearchButtonPress={() => {
+              onSubmit();
+            }}
           />
         </TouchableOpacity>
       </Animated.View>
@@ -326,22 +328,71 @@ export const YelpSearchFilter: FC<Props> = (props) => {
           },
         ]}
       >
-        {isLoading && (
-          <Spinner
-            isVisible={true}
-            size={40}
-            type={"ThreeBounce"}
-            color={"black"}
-            style={{ alignSelf: "center" }}
-          />
+        {isLoading ? (
+          <View style={styles.telescopeView}>
+            <Spinner
+              isVisible={true}
+              size={40}
+              type={"ThreeBounce"}
+              color={"black"}
+            />
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.telescopeView,
+              {
+                display: initialLoad ? "none" : "flex",
+              },
+            ]}
+          >
+            <Image
+              source={require("../../images/atomic_telescope.png")}
+              style={styles.telescope}
+            />
+            {config !== null && restaurants.length === 0 ? (
+              <Text style={styles.searchText}>No restaurants found...</Text>
+            ) : (
+              <Text style={styles.searchText}>Search for a restaurant...</Text>
+            )}
+          </View>
         )}
         {initialLoad && (
           <View style={styles.searchCarousel}>
+            <Text style={styles.resultText}>
+              {restaurants.length + " restaurants found"}
+            </Text>
             <FlatList
               data={restaurants}
+              ref={flatListRef}
               keyExtractor={({ id }) => id.toString()}
               renderItem={_renderItem}
-              ListFooterComponent={<View style={{ height: 300 }} />}
+              ListFooterComponent={
+                <View
+                  style={{
+                    height: 350,
+                    flexDirection: "row",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      flatListRef.current.scrollToOffset({
+                        animated: true,
+                        offset: 0,
+                      });
+                    }}
+                  >
+                    <Icon
+                      size={25}
+                      name="arrow-up"
+                      type="font-awesome"
+                      color="black"
+                    />
+                    <Text>Back to top</Text>
+                  </TouchableOpacity>
+                </View>
+              }
             />
           </View>
         )}
@@ -383,6 +434,7 @@ export const YelpSearchFilter: FC<Props> = (props) => {
 };
 
 const SLIDER_WIDTH = Dimensions.get("window").width;
+const SLIDER_HEIGHT = Dimensions.get("window").height;
 const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.9);
 const ITEM_HEIGHT = Math.round((ITEM_WIDTH * 3) / 4);
 const styles = StyleSheet.create({
@@ -488,5 +540,24 @@ const styles = StyleSheet.create({
   },
   filterText: {
     margin: 0,
+  },
+  telescope: {
+    height: 246.6,
+    width: 165.4,
+  },
+  telescopeView: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: SLIDER_HEIGHT - ITEM_HEIGHT - 100,
+  },
+  searchText: {
+    fontWeight: "bold",
+    marginHorizontal: 10,
+    fontSize: 22,
+  },
+  resultText: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 10,
   },
 });

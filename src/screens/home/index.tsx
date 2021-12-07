@@ -4,6 +4,7 @@ import {
   Dimensions,
   Keyboard,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,8 +15,12 @@ import { ScrollView } from "react-native-gesture-handler";
 import Modal from "react-native-modal";
 import SegmentedControlTab from "react-native-segmented-control-tab";
 import { Yelp } from "../../core/api/yelp";
-import { YelpCarousel } from "../../core/api/yelp-carousel";
+import { YelpCarouselCheapEats } from "../../core/api/yelp-carousel-cheap-eats";
+import { YelpCarouselDiscover } from "../../core/api/yelp-carousel-discover";
+import { YelpCarouselHot } from "../../core/api/yelp-carousel-hot";
+import { YelpCarouselNearMe } from "../../core/api/yelp-carousel-near-me";
 import { YelpSearchFilter } from "../../core/api/yelp-search-filter";
+import SystemNavigationBar from "react-native-system-navigation-bar";
 
 export const HomeScreen: FC = () => {
   const navigation = useNavigation();
@@ -29,21 +34,37 @@ export const HomeScreen: FC = () => {
 
   const [isModalVisible, setModalVisible] = useState(false);
 
+  const [isOpenClosed, setIsOpenClosed] = useState(0);
+
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const [value, setValue] = useState(true);
+
   const cities = ["Ann Arbor", "Grand Rapids", "Chicago"];
+
+  const openClosedOptions = ["All", "Open Only"];
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
     Keyboard.dismiss();
   };
 
+  SystemNavigationBar.setNavigationColor("#fd4f57");
+
+  // const toggleOpenClosed = () => {
+  //   setIsOpenClosed(!isOpenClosed);
+  // };
+
   return (
     <SafeAreaView style={backgroundStyle}>
+      <StatusBar animated={true} backgroundColor="#fd4f57" />
       <View style={styles.contentView}>
         <View style={styles.locationContainer}>
-          <TouchableOpacity onPress={toggleModal}>
-            <View style={styles.changeLocationContainer}>
+          <View style={styles.changeLocationContainer}>
+            <TouchableOpacity
+              onPress={toggleModal}
+              style={styles.changeLocationContainer}
+            >
               <Text style={styles.locationTitle}>Location: {location}</Text>
               <Icon
                 size={20}
@@ -51,30 +72,54 @@ export const HomeScreen: FC = () => {
                 type="font-awesome"
                 color="black"
               />
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.searchContainer}>
           <YelpSearchFilter location={location} />
         </View>
         <ScrollView style={styles.bottomModal}>
-          <View style={styles.pickOuter}>
-            <View style={styles.pickContainer}>
-              <Text style={styles.title}>Our Pick</Text>
-              <View style={styles.scrollContentContainer}>
-                <View style={styles.sectionContainer}>
-                  <Yelp location={location} />
-                </View>
-              </View>
-            </View>
+          <Text style={styles.title}>Our Pick</Text>
+          <View style={styles.scrollContentContainer}>
+            <Yelp location={location} />
           </View>
-          <View style={styles.randomOuter}>
-            <View style={styles.randomContainer}>
-              <Text style={styles.title}>Random Restaurant</Text>
-              <YelpCarousel location={location} />
-              <View style={{ height: 100 }} />
-            </View>
-          </View>
+          <View
+            style={{
+              height: 6,
+              marginTop: 10,
+              backgroundColor: "#F0F0F0",
+            }}
+          />
+          <Text style={styles.title}>Discover Restaurants</Text>
+          <YelpCarouselDiscover location={location} />
+          <View
+            style={{
+              height: 6,
+              marginTop: 15,
+              backgroundColor: "#F0F0F0",
+            }}
+          />
+          <Text style={styles.title}>Restaurants Near Me</Text>
+          <YelpCarouselNearMe location={location} />
+          <View
+            style={{
+              height: 6,
+              marginTop: 15,
+              backgroundColor: "#F0F0F0",
+            }}
+          />
+          <Text style={styles.title}>Cheap Eats</Text>
+          <YelpCarouselCheapEats location={location} />
+          <View
+            style={{
+              height: 6,
+              marginTop: 15,
+              backgroundColor: "#F0F0F0",
+            }}
+          />
+          <Text style={styles.title}>Highly Rated</Text>
+          <YelpCarouselHot location={location} />
+          <View style={{ height: 100 }} />
         </ScrollView>
       </View>
       <Modal
@@ -108,8 +153,9 @@ export const HomeScreen: FC = () => {
               toggleModal();
               setLocation(cities[selectedIndex]);
             }}
+            style={styles.checkButton}
           >
-            <Text style={styles.applyButton}>Apply</Text>
+            <Icon size={32} name="check" type="font-awesome" color="white" />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -156,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E7E7E7",
   },
   pickContainer: {
-    backgroundColor: "#E7E7E7",
+    backgroundColor: "white",
     borderTopRightRadius: 10,
     borderTopLeftRadius: 10,
   },
@@ -165,14 +211,16 @@ const styles = StyleSheet.create({
   },
   bottomModal: {
     marginBottom: 50,
+    backgroundColor: "white",
   },
   scrollContentContainer: {
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
+    marginHorizontal: 15,
   },
   sectionContainer: {
-    width: ITEM_WIDTH,
+    width: "100%",
     height: ITEM_HEIGHT,
     justifyContent: "center",
     alignItems: "center",
@@ -188,7 +236,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fd4f57",
     borderBottomWidth: 0.2,
     borderBottomColor: "grey",
-    marginTop: 10,
   },
   itemContainer: {
     height: ITEM_HEIGHT,
@@ -221,9 +268,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "500",
     textAlign: "left",
-    marginLeft: SLIDER_WIDTH - ITEM_WIDTH - (SLIDER_WIDTH - ITEM_WIDTH) / 2,
+    marginLeft: 15,
     color: "black",
-    marginTop: 15,
+    marginTop: 10,
     marginBottom: 5,
   },
   titleBot: {
@@ -268,5 +315,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+  },
+  checkButton: {
+    shadowColor: "#171717",
+    shadowOffset: { width: -2, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    backgroundColor: "#fd4f57",
+    width: 100,
+    height: 50,
+    borderRadius: 50 / 2,
+    justifyContent: "center",
+    margin: 15,
+  },
+  addButton: {
+    shadowColor: "#171717",
+    shadowOffset: { width: -2, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    backgroundColor: "#fd4f57",
+    width: 50,
+    height: 50,
+    margin: 10,
+    borderRadius: 50 / 2,
+    justifyContent: "center",
+    position: "absolute",
+    bottom: 50,
+    right: 0,
   },
 });

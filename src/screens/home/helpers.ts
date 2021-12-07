@@ -17,6 +17,8 @@ export const getAddress = (location: string) => {
     return "1034 Wealthy St SE, Grand Rapids, MI 49506";
   } else if (location === "Chicago") {
     return "500 W Madison St Suite 1000, Chicago, IL 60661";
+  } else if (location === "Troy") {
+    return "2241 Radcliffe Dr, Troy, MI 48085";
   } else {
     return "206 S 5th Ave #300, Ann Arbor, MI 48104";
   }

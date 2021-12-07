@@ -26,6 +26,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PairLunchPicker/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = PairLunchPicker/main.m; sourceTree = "<group>"; };
 		58EEBF8E8E6FB1BC6CAF49B5 /* libPods-PairLunchPicker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PairLunchPicker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		67C549BA2746CDC70014576A /* PairLunchPicker-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PairLunchPicker-Bridging-Header.h"; sourceTree = "<group>"; };
 		6C2E3173556A471DD304B334 /* Pods-PairLunchPicker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PairLunchPicker.debug.xcconfig"; path = "Target Support Files/Pods-PairLunchPicker/Pods-PairLunchPicker.debug.xcconfig"; sourceTree = "<group>"; };
 		7A4D352CD337FB3A3BF06240 /* Pods-PairLunchPicker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PairLunchPicker.release.xcconfig"; path = "Target Support Files/Pods-PairLunchPicker/Pods-PairLunchPicker.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = PairLunchPicker/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -58,6 +59,7 @@
 				13B07FB11A68108700A75B9A /* LaunchScreen.xib */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
+				67C549BA2746CDC70014576A /* PairLunchPicker-Bridging-Header.h */,
 			);
 			name = PairLunchPicker;
 			sourceTree = "<group>";
@@ -153,7 +155,7 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						DevelopmentTeam = F6YUH468ZK;
-						LastSwiftMigration = 1120;
+						LastSwiftMigration = 1310;
 					};
 				};
 			};
@@ -313,6 +315,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.name.PairLunchPicker;
 				PRODUCT_NAME = PairLunchPicker;
+				SWIFT_OBJC_BRIDGING_HEADER = "PairLunchPicker-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -338,6 +341,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.name.PairLunchPicker;
 				PRODUCT_NAME = PairLunchPicker;
+				SWIFT_OBJC_BRIDGING_HEADER = "PairLunchPicker-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";

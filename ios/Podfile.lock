@@ -317,6 +317,8 @@ PODS:
     - React-perflogger (= 0.65.1)
   - RNCAsyncStorage (1.15.8):
     - React-Core
+  - RNDateTimePicker (3.5.2):
+    - React-Core
   - RNGestureHandler (1.10.3):
     - React-Core
   - RNReanimated (2.2.1):
@@ -352,6 +354,8 @@ PODS:
     - React-Core
     - React-RCTImage
   - RNSearchBar (3.5.1):
+    - React
+  - RNSVG (12.1.1):
     - React
   - UMAppLoader (2.2.0)
   - UMCore (7.1.2)
@@ -409,10 +413,12 @@ DEPENDENCIES:
   - React-runtimeexecutor (from `../node_modules/react-native/ReactCommon/runtimeexecutor`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSearchBar (from `../node_modules/react-native-search-bar`)
+  - RNSVG (from `../node_modules/react-native-svg`)
   - UMAppLoader (from `../node_modules/unimodules-app-loader/ios`)
   - "UMCore (from `../node_modules/@unimodules/core/ios`)"
   - "UMReactNativeAdapter (from `../node_modules/@unimodules/react-native-adapter/ios`)"
@@ -511,6 +517,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNDateTimePicker:
+    :path: "../node_modules/@react-native-community/datetimepicker"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
   RNReanimated:
@@ -519,6 +527,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   RNSearchBar:
     :path: "../node_modules/react-native-search-bar"
+  RNSVG:
+    :path: "../node_modules/react-native-svg"
   UMAppLoader:
     :path: "../node_modules/unimodules-app-loader/ios"
   UMCore:
@@ -576,10 +586,12 @@ SPEC CHECKSUMS:
   React-runtimeexecutor: 85187f19dd9c47a7c102f9994f9d14e4dc2110de
   ReactCommon: eafed38eec7b591c31751bfa7494801618460459
   RNCAsyncStorage: e8b8d6320a0dd90eb610fb0d0b1ef90596697c69
+  RNDateTimePicker: 7658208086d86d09e1627b5c34ba0cf237c60140
   RNGestureHandler: a479ebd5ed4221a810967000735517df0d2db211
   RNReanimated: d29057cf85e771be4f0180ba1d00a7185e423a7d
   RNScreens: 21b73c94c9117e1110a79ee0ee80c93ccefed8ce
   RNSearchBar: 9860431356b7d12a8449d2fddb2b5f3c78d1e99f
+  RNSVG: 551acb6562324b1d52a4e0758f7ca0ec234e278f
   UMAppLoader: 21af63390e55c82e037fb9752d93114a80ecf16e
   UMCore: ce3a4faa010239063b8343895b29a6d97b01069d
   UMReactNativeAdapter: bb7922210cf6fdb5768f78685f3c3a2060299119
