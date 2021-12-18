@@ -67,7 +67,7 @@ export const TabNavigator: React.FC = () => {
         options={{
           tabBarIcon: (props) => tabBarIcon("tracker", { ...props, size: 24 }),
           headerStyle: { backgroundColor: "#fd4f57" },
-          headerStatusBarHeight: 0,
+          headerShown: false,
         }}
         name="Pair Lunch Tracker"
         component={Tracker}

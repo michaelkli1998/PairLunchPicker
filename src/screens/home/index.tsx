@@ -21,6 +21,7 @@ import { YelpCarouselHot } from "../../core/api/yelp-carousel-hot";
 import { YelpCarouselNearMe } from "../../core/api/yelp-carousel-near-me";
 import { YelpSearchFilter } from "../../core/api/yelp-search-filter";
 import SystemNavigationBar from "react-native-system-navigation-bar";
+import realm from "../../core/storage/realm";
 
 export const HomeScreen: FC = () => {
   const navigation = useNavigation();
@@ -63,8 +64,15 @@ export const HomeScreen: FC = () => {
           <View style={styles.changeLocationContainer}>
             <TouchableOpacity
               onPress={toggleModal}
-              style={styles.changeLocationContainer}
+              style={styles.changeLocationText}
             >
+              <Icon
+                size={22}
+                name="map-marker"
+                type="font-awesome"
+                color="black"
+                style={{ marginRight: 10 }}
+              />
               <Text style={styles.locationTitle}>Location: {location}</Text>
               <Icon
                 size={20}
@@ -234,8 +242,6 @@ const styles = StyleSheet.create({
   },
   locationContainer: {
     backgroundColor: "#fd4f57",
-    borderBottomWidth: 0.2,
-    borderBottomColor: "grey",
   },
   itemContainer: {
     height: ITEM_HEIGHT,
@@ -285,8 +291,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     color: "black",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: 5,
+    paddingRight: 10,
   },
   contentView: {
     borderTopColor: "#4c4845",
@@ -315,6 +321,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+  },
+  changeLocationText: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
   },
   checkButton: {
     shadowColor: "#171717",

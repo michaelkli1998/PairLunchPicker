@@ -1,7 +1,17 @@
 import React from "react";
 
-export default function useToggle(
+export function useToggle(
   initialValue: boolean = false
+): [boolean, () => void] {
+  const [value, setValue] = React.useState<boolean>(initialValue);
+  const toggle = React.useCallback(() => {
+    setValue((v) => !v);
+  }, []);
+  return [value, toggle];
+}
+
+export function useToggleTrue(
+  initialValue: boolean = true
 ): [boolean, () => void] {
   const [value, setValue] = React.useState<boolean>(initialValue);
   const toggle = React.useCallback(() => {

@@ -16,6 +16,8 @@ import {
 import { Icon } from "react-native-elements";
 import Spinner from "react-native-spinkit";
 import { yelpBusinessResponse, yelpReviewResponse } from "../../types";
+import Carousel from "react-native-banner-carousel";
+import Swiper from "react-native-swiper";
 
 const config = {
   headers: {
@@ -75,11 +77,25 @@ export const DetailedRestaurantView: FC = ({ route }) => {
 
   const [isModalVisible, setModalVisible] = useState(false);
 
+  const [busImages, setBusImages] = useState([]);
+
+  const BannerWidth = Dimensions.get("window").width;
+  const BannerHeight = 230;
+
   useEffect(() => {
     axios
       .get("https://api.yelp.com/v3/businesses/" + route.params.id, config)
       .then((response) => {
         setRestaurants(response.data);
+        let tempList = [];
+        tempList.push(response.data.image_url);
+        tempList = [...response.data.photos];
+        if (tempList.length === 0) {
+          tempList.push(
+            "https://st3.depositphotos.com/23594922/31822/v/600/depositphotos_318221368-stock-illustration-missing-picture-page-for-website.jpg"
+          );
+        }
+        setBusImages(tempList);
         setLoadingBus(false);
       });
   }, []);
@@ -171,11 +187,26 @@ export const DetailedRestaurantView: FC = ({ route }) => {
     return rows;
   };
 
+  const renderPage = (image, index) => {
+    return (
+      <View key={index}>
+        <ImageBackground
+          style={{
+            width: BannerWidth,
+            height: BannerHeight,
+            opacity: 1,
+          }}
+          source={{ uri: image }}
+        />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.contentView}>
-        <View style={styles.bottomModal}>
-          <ImageBackground
+        <ScrollView style={styles.bottomModal}>
+          {/* <ImageBackground
             imageStyle={styles.imageStyle}
             style={styles.itemContainer}
             source={{
@@ -183,107 +214,135 @@ export const DetailedRestaurantView: FC = ({ route }) => {
                 ? business.image_url
                 : "https://st3.depositphotos.com/23594922/31822/v/600/depositphotos_318221368-stock-illustration-missing-picture-page-for-website.jpg",
             }}
-          ></ImageBackground>
-          <View style={styles.modalUp}>
-            <Text style={styles.titleName}>{business.name}</Text>
+          ></ImageBackground> */}
+          <Swiper
+            style={styles.wrapper}
+            showsButtons={false}
+            autoplay={true}
+            autoplayTimeout={5}
+            dot={
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,1)",
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  marginLeft: 3,
+                  marginRight: 3,
+                  marginTop: 3,
+                  marginBottom: 3,
+                }}
+              />
+            }
+            activeDot={
+              <View
+                style={{
+                  backgroundColor: "#fd4f57",
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  marginLeft: 3,
+                  marginRight: 3,
+                  marginTop: 3,
+                  marginBottom: 3,
+                }}
+              />
+            }
+          >
+            {busImages.map((image, index) => renderPage(image, index))}
+          </Swiper>
+          <Text style={styles.titleName}>{business.name}</Text>
+          <View style={styles.flexRowContainer}>
+            <Text style={styles.titleLeftSmall}>★ {business.rating}/5</Text>
+            <Text style={styles.titleLeftSmall}>
+              ({business.review_count} reviews)
+            </Text>
+            {business.price && (
+              <>
+                <Text style={styles.titleLeftSmall}>•</Text>
+                <Text style={styles.titleLeftSmall}>{business.price}</Text>
+              </>
+            )}
+            {business.categories && (
+              <>
+                <Text style={styles.titleLeftSmall}>•</Text>
+                <Text style={styles.titleLeftSmall}>
+                  {business.categories[0].title}
+                </Text>
+              </>
+            )}
+          </View>
+          {business.hours && business.hours[0].is_open_now ? (
             <View style={styles.flexRowContainer}>
-              <Text style={styles.titleLeftSmall}>★ {business.rating}/5</Text>
-              <Text style={styles.titleLeftSmall}>
-                ({business.review_count} reviews)
-              </Text>
-              {business.price && (
-                <>
-                  <Text style={styles.titleLeftSmall}>•</Text>
-                  <Text style={styles.titleLeftSmall}>{business.price}</Text>
-                </>
-              )}
-              {business.categories && (
-                <>
-                  <Text style={styles.titleLeftSmall}>•</Text>
-                  <Text style={styles.titleLeftSmall}>
-                    {business.categories[0].title}
+              {business.hours &&
+                business.hours[0].is_open_now &&
+                business.hours[0].open[dayPlusOne(now.getDay())] && (
+                  <Text style={styles.openSmall}>
+                    Opens until{" "}
+                    {addColonToTime(
+                      business.hours[0].open[dayPlusOne(now.getDay())].end
+                    )}
                   </Text>
-                </>
-              )}
+                )}
             </View>
-            {business.hours && business.hours[0].is_open_now ? (
-              <View style={styles.flexRowContainer}>
-                {business.hours &&
-                  business.hours[0].is_open_now &&
-                  business.hours[0].open[dayPlusOne(now.getDay())] && (
-                    <Text style={styles.openSmall}>
-                      Opens until{" "}
-                      {addColonToTime(
-                        business.hours[0].open[dayPlusOne(now.getDay())].end
-                      )}
-                    </Text>
-                  )}
-              </View>
-            ) : (
-              <View style={styles.flexRowContainer}>
-                {business.hours &&
-                  !business.hours[0].is_open_now &&
-                  business.hours[0].open[dayPlusOne(now.getDay())] && (
-                    <Text style={styles.closedSmall}>
-                      Opens at{" "}
-                      {addColonToTime(
-                        business.hours[0].open[dayPlusOne(now.getDay())].start
-                      )}{" "}
-                      {getTodayOrTomorrow()}
-                    </Text>
-                  )}
-              </View>
-            )}
-            {business.phone !== "" && (
-              <TouchableOpacity
-                onPress={() => callNumber(business.phone)}
-                style={styles.flexRowContainer}
-              >
-                <Icon
-                  size={24}
-                  name="phone"
-                  type="font-awesome"
-                  color="#fd4f57"
-                  style={{ marginTop: 10, marginRight: 8 }}
-                />
-                <Text style={styles.title}>{business.display_phone}</Text>
-              </TouchableOpacity>
-            )}
+          ) : (
+            <View style={styles.flexRowContainer}>
+              {business.hours &&
+                !business.hours[0].is_open_now &&
+                business.hours[0].open[dayPlusOne(now.getDay())] && (
+                  <Text style={styles.closedSmall}>
+                    Opens at{" "}
+                    {addColonToTime(
+                      business.hours[0].open[dayPlusOne(now.getDay())].start
+                    )}{" "}
+                    {getTodayOrTomorrow()}
+                  </Text>
+                )}
+            </View>
+          )}
+          {business.phone !== "" && (
             <TouchableOpacity
-              onPress={openMaps}
+              onPress={() => callNumber(business.phone)}
               style={styles.flexRowContainer}
             >
               <Icon
                 size={24}
-                name="map-marker"
+                name="phone"
                 type="font-awesome"
                 color="#fd4f57"
                 style={{ marginTop: 10, marginRight: 8 }}
               />
-              <Text style={styles.title}>
-                {route.params.restaurant.location.address1}.
-              </Text>
+              <Text style={styles.title}>{business.display_phone}</Text>
             </TouchableOpacity>
-            <View style={styles.flexRowContainer}>
-              <Text style={styles.titleLeftSmall}>
-                {(route.params.restaurant.distance / 1609.344).toFixed(2)} miles
-                away
-              </Text>
-            </View>
-            <View
-              style={{
-                borderBottomColor: "grey",
-                borderBottomWidth: 0.5,
-                marginHorizontal: 15,
-                marginTop: 16,
-              }}
+          )}
+          <TouchableOpacity onPress={openMaps} style={styles.flexRowContainer}>
+            <Icon
+              size={24}
+              name="map-marker"
+              type="font-awesome"
+              color="#fd4f57"
+              style={{ marginTop: 10, marginRight: 8 }}
             />
-            <ScrollView>
-              <Text style={styles.titleReviews}>Reviews</Text>
-              <View style={styles.ratingsContainer}>{renderRatings()}</View>
-            </ScrollView>
+            <Text style={styles.title}>
+              {route.params.restaurant.location.address1}.
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.flexRowContainer}>
+            <Text style={styles.titleLeftSmall}>
+              {(route.params.restaurant.distance / 1609.344).toFixed(2)} miles
+              away
+            </Text>
           </View>
-        </View>
+          <View
+            style={{
+              height: 6,
+              marginTop: 15,
+              backgroundColor: "#F0F0F0",
+            }}
+          />
+          <Text style={styles.titleReviews}>Reviews</Text>
+          <View style={styles.ratingsContainer}>{renderRatings()}</View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -359,8 +418,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "left",
     marginHorizontal: 15,
+    marginTop: -5,
     color: "black",
-    marginTop: 10,
   },
   titleReviews: {
     fontSize: 20,
@@ -401,14 +460,13 @@ const styles = StyleSheet.create({
   },
   bottomModal: {
     height: "100%",
+    backgroundColor: "white"
   },
   modalUp: {
     position: "absolute",
     width: "100%",
     height: "100%",
     backgroundColor: "#F1F1F1",
-    borderRadius: 10,
-    top: ITEM_HEIGHT - 80,
   },
   openSmall: {
     color: "green",
@@ -439,7 +497,8 @@ const styles = StyleSheet.create({
     height: 200,
     backgroundColor: "red",
   },
-  ratingsContainer: {
-    height: SLIDER_HEIGHT * 0.9,
+  ratingsContainer: {},
+  wrapper: {
+    height: 245,
   },
 });

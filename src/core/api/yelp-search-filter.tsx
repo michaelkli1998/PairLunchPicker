@@ -23,7 +23,11 @@ import LinearGradient from "react-native-linear-gradient";
 import Modal from "react-native-modal";
 import SearchBar from "react-native-search-bar";
 import Spinner from "react-native-spinkit";
-import { getAddress } from "../../screens/home/helpers";
+import {
+  useToggle,
+  getAddress,
+  useToggleTrue,
+} from "../../screens/home/helpers";
 import {
   filterCategories,
   FilterModal,
@@ -52,9 +56,36 @@ export const YelpSearchFilter: FC<Props> = (props) => {
 
   const [filterCategory, setFilterCategory] = useState(filterCategories.price);
 
+  const [sortByCriteria, setSortByCriteria] = useState("Relevance");
+
+  const [mappedSortBy, setMappedSortBy] = useState("best_match");
+
+  const [priceRange, setPriceRange] = useState("Price");
+
+  const [priceRangeList, setPriceRangeList] = useState("");
+
+  const [visitedToggle, setVisitedToggle] = useToggle();
+
+  const [openToggle, setOpenToggle] = useToggleTrue();
+
   const searchRef = useRef<SearchBar>();
 
   const flatListRef = useRef<FlatList>();
+
+  var tempConfig = {
+    headers: {
+      Authorization:
+        "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
+    },
+    params: {
+      term: "restaurant",
+      location: getAddress(props.location),
+      radius: 1609,
+      sort_by: mappedSortBy,
+      open_now: openToggle,
+      price: priceRangeList === "" ? "1,2,3,4" : priceRangeList,
+    },
+  };
 
   const fadeIn = () => {
     Animated.timing(fadeAnimation, {
@@ -114,6 +145,97 @@ export const YelpSearchFilter: FC<Props> = (props) => {
 
   const [config, setConfig] = useState(null);
 
+  const handleResponse = (response: any) => {
+    switch (filterCategory) {
+      case filterCategories.sortBy: {
+        setSortByCategory(response);
+        break;
+      }
+      case filterCategories.price: {
+        setSortByPrice(response);
+      }
+    }
+  };
+
+  const setSortByCategory = (index: number) => {
+    switch (index) {
+      case 0: {
+        setSortByCriteria("Relevance");
+        setMappedSortBy("best_match");
+        break;
+      }
+      case 1:
+        setSortByCriteria("Distance");
+        setMappedSortBy("distance");
+        break;
+      case 2:
+        setSortByCriteria("Rating");
+        setMappedSortBy("rating");
+        break;
+      case 3:
+        setSortByCriteria("Reviews");
+        setMappedSortBy("review_count");
+        break;
+    }
+  };
+
+  const setSortByPrice = (priceRange: any) => {
+    let priceString = "";
+    const sortedPriceRange = priceRange.sort((a, b) => a > b);
+    if (sortedPriceRange.length === 0) {
+      priceString = "Price";
+    } else if (sortedPriceRange.length === 1) {
+      priceString = getDollarSignByIndex(sortedPriceRange[0]) as string;
+    } else if (listIsConsecutive(sortedPriceRange)) {
+      priceString = ((getDollarSignByIndex(sortedPriceRange[0]) as string) +
+        "-" +
+        getDollarSignByIndex(
+          sortedPriceRange[sortedPriceRange.length - 1]
+        )) as string;
+    } else {
+      let i = 1;
+      priceString += getDollarSignByIndex(sortedPriceRange[0]);
+      for (i; i < sortedPriceRange.length; i++) {
+        priceString += ",";
+        priceString += getDollarSignByIndex(sortedPriceRange[i]);
+      }
+    }
+
+    setPriceRange(priceString);
+    let i = 1;
+    let finalPriceString = "";
+    finalPriceString += sortedPriceRange[0] + 1;
+    for (i; i < priceRange.length; i++) {
+      finalPriceString += ",";
+      finalPriceString += sortedPriceRange[i] + 1;
+    }
+    setPriceRangeList(finalPriceString);
+    console.log(finalPriceString);
+  };
+
+  const getDollarSignByIndex = (index: number) => {
+    switch (index) {
+      case 0:
+        return "$";
+      case 1:
+        return "$$";
+      case 2:
+        return "$$$";
+      case 3:
+        return "$$$$";
+    }
+  };
+
+  const listIsConsecutive = (numList: any) => {
+    let i = 0;
+    for (i; i < numList.length - 1; i++) {
+      if (numList[i + 1] - numList[i] != 1) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   useEffect(() => {
     if (config !== null) {
       axios
@@ -135,13 +257,8 @@ export const YelpSearchFilter: FC<Props> = (props) => {
 
   useEffect(() => {
     if (config !== null) {
-      axios
-        .get("https://api.yelp.com/v3/businesses/search", config)
-        .then((response) => {
-          setRestaurants(response.data.businesses);
-          onSubmit();
-          setLoading(false);
-        });
+      onSubmit();
+      setLoading(true);
     } else {
       setLoading(false);
     }
@@ -154,21 +271,14 @@ export const YelpSearchFilter: FC<Props> = (props) => {
     }
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (searchQuery !== "") {
+      onSubmit();
+    }
+  }, [openToggle, mappedSortBy, priceRangeList]);
+
   const onSubmit = () => {
-    var tempConfig = {
-      headers: {
-        Authorization:
-          "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
-      },
-      params: {
-        term: "restaurant",
-        location: getAddress(props.location),
-        radius: 1609,
-        sort_by: "best_match",
-        limit: 50,
-        open_now: true,
-      },
-    };
+    setInitialLoad(false);
     if (searchQuery === "") {
       setLoading(true);
       setConfig(null);
@@ -176,6 +286,7 @@ export const YelpSearchFilter: FC<Props> = (props) => {
     } else {
       tempConfig.params.term = searchQuery;
       setLoading(true);
+      console.log(tempConfig);
       setConfig(tempConfig);
     }
   };
@@ -184,7 +295,6 @@ export const YelpSearchFilter: FC<Props> = (props) => {
     return (
       <TouchableOpacity
         onPress={() => {
-          toggleModal();
           fadeIn();
           //@ts-ignore
           navigation.navigate("Detailed Restaurant View", {
@@ -197,7 +307,12 @@ export const YelpSearchFilter: FC<Props> = (props) => {
         <ImageBackground
           imageStyle={styles.imageStyle}
           style={styles.itemContainer}
-          source={{ uri: item.image_url }}
+          source={{
+            uri:
+              item.image_url === ""
+                ? "https://st3.depositphotos.com/23594922/31822/v/600/depositphotos_318221368-stock-illustration-missing-picture-page-for-website.jpg"
+                : item.image_url,
+          }}
         >
           <LinearGradient
             style={styles.imageView}
@@ -212,6 +327,7 @@ export const YelpSearchFilter: FC<Props> = (props) => {
       </TouchableOpacity>
     );
   };
+
   return (
     <View>
       <Animated.View
@@ -265,55 +381,72 @@ export const YelpSearchFilter: FC<Props> = (props) => {
         <ScrollView horizontal={true}>
           <TouchableOpacity
             onPress={() => {
+              setFilterCategory(filterCategories.sortBy);
+              toggleModal();
+            }}
+          >
+            <View style={styles.filterContainerSelected}>
+              <Icon
+                size={16}
+                name="caret-down"
+                type="font-awesome"
+                color="black"
+              />
+              <Text style={styles.filterTextCarrot}>{sortByCriteria}</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
               setFilterCategory(filterCategories.price);
               toggleModal();
             }}
           >
-            <View style={styles.filterContainer}>
+            <View
+              style={
+                priceRange !== "Price"
+                  ? styles.filterContainerSelected
+                  : styles.filterContainer
+              }
+            >
               <Icon
                 size={16}
                 name="caret-down"
                 type="font-awesome"
                 color="black"
               />
-              <Text style={styles.filterTextCarrot}>Price</Text>
+              <Text style={styles.filterTextCarrot}>{priceRange}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
-              setFilterCategory(filterCategories.distance);
-              toggleModal();
+              setOpenToggle();
+              // onSubmit();
             }}
           >
-            <View style={styles.filterContainer}>
-              <Icon
-                size={16}
-                name="caret-down"
-                type="font-awesome"
-                color="black"
-              />
-              <Text style={styles.filterTextCarrot}>Distance</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setFilterCategory(filterCategories.rating);
-              toggleModal();
-            }}
-          >
-            <View style={styles.filterContainer}>
-              <Icon
-                size={16}
-                name="caret-down"
-                type="font-awesome"
-                color="black"
-              />
-              <Text style={styles.filterTextCarrot}>Rating</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <View style={styles.filterContainer}>
+            <View
+              style={
+                openToggle
+                  ? styles.filterContainerSelected
+                  : styles.filterContainer
+              }
+            >
               <Text style={styles.filterText}>Open</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setVisitedToggle();
+              // onSubmit();
+            }}
+          >
+            <View
+              style={
+                visitedToggle
+                  ? styles.filterContainerSelected
+                  : styles.filterContainer
+              }
+            >
+              <Text style={styles.filterText}>Visited</Text>
             </View>
           </TouchableOpacity>
         </ScrollView>
@@ -428,6 +561,7 @@ export const YelpSearchFilter: FC<Props> = (props) => {
         isVisible={isModalVisible}
         toggleVisibility={toggleModal}
         category={filterCategory}
+        handleResponse={handleResponse}
       />
     </View>
   );
@@ -528,6 +662,15 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.5)",
+    borderRadius: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginHorizontal: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  filterContainerSelected: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 5,
     paddingVertical: 5,
     paddingHorizontal: 10,

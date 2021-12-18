@@ -1,70 +1,79 @@
-import React, { FC, useRef, useState, useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import React, { FC, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Dimensions,
+  FlatList,
   Image,
-  Button,
   Modal as RNModal,
   SafeAreaView,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Dimensions,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { Icon } from "react-native-elements";
-import Select2 from "react-native-select-two";
-import { atomicPeople } from "./people_list";
-import { LogBox } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { TouchableOpacity as AltTouchableOpacity } from "react-native-gesture-handler";
-import AwesomeButton from "react-native-really-awesome-button";
-import { Touchable } from "../../shared_components/touchable";
-import BrickList from "react-native-masonry-brick-list";
-import LinearGradient from "react-native-linear-gradient";
-import ColorPicker from "react-native-wheel-color-picker";
-import useToggle from "../home/helpers";
-import Modal from "react-native-modal";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
-import Board, { Repository } from "react-native-dnd-board";
+import Modal from "react-native-modal";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import AwesomeButton from "react-native-really-awesome-button";
+import Select2 from "react-native-select-two";
+import { SceneMap, TabBar, TabView } from "react-native-tab-view";
+import ColorPicker from "react-native-wheel-color-picker";
+import { BSON } from "realm";
+import { getRealm, getRealmLunches } from "../../core/storage/realm";
+import { PAIRLUNCHLIST_SCHEMA } from "../../core/storage/schema";
+import { Touchable } from "../../shared_components/touchable";
+import { useToggle } from "../home/helpers";
+import { atomicPeople } from "./people_list";
 
 type Props = { atomic_people: any };
 
 const COLUMN_WIDTH = Dimensions.get("window").width * 0.6;
 
 const DnDBoard: FC<Props> = (props) => {
-  const mockData = [
-    {
-      id: "1",
-      name: "Upcoming Lunches",
-      rows: [],
-    },
-    {
-      id: "2",
-      name: "Past Lunches",
-      rows: [],
-    },
-  ];
-
   const [currentId, setCurrentId] = useState(0);
-
-  const [data, setData] = useState([]);
 
   const [isModalVisible, setModalVisible] = useState(false);
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
   };
   const [dateText, setDateText] = useState("");
+  const [timeText, setTimeText] = useState("");
   const [restaurant, setRestaurant] = useState("");
   const [selectedItem, setSelectedItems] = useState("");
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
 
   const [colorWheelOpen, setColorWheelOpen] = useToggle(false);
 
   const [color, setColor] = useState("#ffffff");
 
-  const [currentModal, setCurrentModal] = useState(0);
+  const [pairLunchList, setPairLunchList] = useState([]);
+
+  const [initPairLunchList, setInitPairLunchList] = useState([]);
+
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  const { width } = useWindowDimensions();
+
+  const [index, setIndex] = React.useState(0);
+  const [routes] = React.useState([
+    { key: "upcoming", title: "Upcoming" },
+    { key: "past", title: "Past" },
+  ]);
+
+  const navigation = useNavigation();
+
+  const reloadData = async () => {
+    const lunches = await getRealmLunches();
+    setInitPairLunchList(lunches);
+  };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -74,57 +83,58 @@ const DnDBoard: FC<Props> = (props) => {
     setDatePickerVisibility(false);
   };
 
-  const handleConfirm = (date) => {
+  const handleConfirmDate = (date) => {
     setDateText(
       date.toISOString().split("T")[0].split("-")[1] +
-        "-" +
+        "/" +
         date.toISOString().split("T")[0].split("-")[2] +
-        "-" +
+        "/" +
         date.toISOString().split("T")[0].split("-")[0]
     );
     hideDatePicker();
+    setTimeout(() => {
+      showTimePicker();
+    }, 500);
   };
 
-  const compareDates = (date) => {
-    const dateNow = new Date();
-    const compDate =
-      dateNow.toISOString().split("T")[0].split("-")[1] +
-      "-" +
-      dateNow.toISOString().split("T")[0].split("-")[2] +
-      "-" +
-      dateNow.toISOString().split("T")[0].split("-")[0];
+  const showTimePicker = () => {
+    setTimePickerVisibility(true);
+  };
 
-    const monthComp = date.split("-")[0];
-    const dayComp = date.split("-")[1];
-    const yearComp = date.split("-")[2];
+  const hideTimePicker = () => {
+    setTimePickerVisibility(false);
+  };
 
-    const monthNow = compDate.split("-")[0];
-    const dayNow = compDate.split("-")[1];
-    const yearNow = compDate.split("-")[2];
-
-    if (yearComp > yearNow) {
-      return "after";
+  const handleConfirmTime = (date) => {
+    let hours = date.getHours();
+    let minutes = makeTwoDigits(date.getMinutes());
+    let time = "";
+    if (hours > 12) {
+      hours = hours - 12;
+      time = hours + ":" + minutes + "pm";
+    } else if (hours === 0) {
+      time = 12 + ":" + minutes + "am";
+    } else if (hours === 12) {
+      time = 12 + ":" + minutes + "pm";
+    } else {
+      time = hours + ":" + minutes + "am";
     }
 
-    if (monthComp > monthNow) {
-      return "after";
-    }
+    setTimeText(dateText + " at " + time);
 
-    if (dayComp > dayNow) {
-      return "after";
-    }
+    hideTimePicker();
+  };
 
-    if (yearComp === yearNow && monthComp === monthNow && dayComp === dayNow) {
-      return "after";
-    }
-
-    return "before";
+  const makeTwoDigits = (time) => {
+    const timeString = `${time}`;
+    if (timeString.length === 2) return time;
+    return `0${time}`;
   };
 
   const atomic_people = atomicPeople;
   atomic_people.sort((a, b) => (a.name > b.name ? 1 : -1));
 
-  const submitPairLunch = () => {
+  const submitPairLunch = async () => {
     const atom = atomic_people
       .filter((item) => {
         return item.id.toString() === selectedItem[0].toString();
@@ -134,60 +144,61 @@ const DnDBoard: FC<Props> = (props) => {
       });
 
     const cardCol = compareDates(dateText);
+    let colNum = 0;
 
     if (cardCol === "after") {
-      addCard(1, currentId, atom[0], dateText, restaurant, color);
+      colNum = 1;
     } else {
-      addCard(2, currentId, atom[0], dateText, restaurant, color);
+      colNum = 2;
     }
+
+    const newPairLunch = {
+      id: new BSON.ObjectId(),
+      atom: atom[0],
+      date: timeText,
+      restaurant: restaurant,
+      color: color,
+      column: colNum,
+    };
+    const realm = await getRealm();
+
+    var lunchList = [];
+    lunchList.push(newPairLunch);
+    realm.write(() => {
+      const allPairLunchLists: any = realm.objects(PAIRLUNCHLIST_SCHEMA);
+      if (allPairLunchLists[0] === undefined) {
+        const newPairLunchList = {
+          id: new BSON.ObjectId(),
+          atom: "Michael Li",
+          lunches: lunchList,
+        };
+        realm.create(PAIRLUNCHLIST_SCHEMA, newPairLunchList);
+      } else {
+        allPairLunchLists[0].lunches.push(newPairLunch);
+      }
+    });
+    let tempPairLunchList = [];
+    if (isFirstLoad) {
+      tempPairLunchList = [...initPairLunchList];
+    } else {
+      tempPairLunchList = [...pairLunchList];
+      tempPairLunchList.push(newPairLunch);
+    }
+    setPairLunchList(tempPairLunchList);
 
     setCurrentId(currentId + 1);
 
     // setHasResults(true);
     setDateText("");
+    setTimeText("");
     setRestaurant("");
+    setIsFirstLoad(false);
   };
 
   const checkFieldsFilled = () => {
     return dateText !== "" && restaurant !== "" && selectedItem !== ""
       ? false
       : true;
-  };
-
-  let mockDataLength = mockData.length;
-  let mockDataRowLength = {};
-  mockData.forEach((column) => {
-    mockDataRowLength[column.id] = column.rows.length;
-  });
-
-  const [repository] = useState(new Repository(mockData));
-
-  const addCard = (columnId, itemId, name, date, restaurant, color) => {
-    const data = {
-      id: itemId,
-      name: name,
-      date: date,
-      restaurant: restaurant,
-      color: color,
-    };
-
-    // Call api add row here
-    // Add row to the board
-    repository.addRow(columnId, data);
-  };
-
-  const updateCard = (cardId, data) => {
-    const dummy = data || { name: "Row updated" };
-
-    // Call api update row here
-    // Update row on the board
-    repository.updateRow(cardId, dummy);
-  };
-
-  const deleteCard = (cardId) => {
-    // Call api delete row here
-    // Delete row on the board
-    repository.deleteRow(cardId);
   };
 
   const renderCard = ({ item }) => {
@@ -224,104 +235,119 @@ const DnDBoard: FC<Props> = (props) => {
       >
         <View style={{ flexDirection: "column" }}>
           <Text style={[{ fontWeight: "bold" }, styles.cardText]}>
-            {item.name}
+            {item.atom}
           </Text>
           <Text style={styles.cardText}>{item.date}</Text>
           <Text style={styles.cardText}>{item.restaurant}</Text>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           onPress={() => deleteCard(item.id)}
         >
           <Text>✕</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     );
   };
 
-  const addColumn = () => {
-    mockDataRowLength[++mockDataLength] = 0;
-    const column = {
-      id: mockDataLength,
-      name: `Column ${mockDataLength}`,
-      rows: [],
-    };
-
-    // Call api add column here
-    mockData.push(column);
-
-    // Add column to the board
-    repository.addColumn(column);
-  };
-
-  const updateColumn = (columnId, data) => {
-    const dummy = data || { name: "Column name updated" };
-
-    // Call api update column here
-    const columnIndex = mockData.findIndex((column) => column.id === columnId);
-    if (columnIndex > -1) {
-      mockData[columnIndex].name = dummy.name;
-    }
-
-    // Update column on the board
-    repository.updateColumn(columnId, dummy);
-  };
-
-  const deleteColumn = (columnId) => {
-    // Call api delete column here
-    const columnIndex = mockData.findIndex((column) => column.id === columnId);
-    if (columnIndex > -1) {
-      mockData.splice(columnIndex, 1);
-    }
-
-    // Delete column on the board
-    repository.deleteColumn(columnId);
-  };
-
-  const renderColumn = ({ item, columnComponent, layoutProps, index }) => {
+  const FirstRouteInit = () => {
     return (
-      <View style={styles.column} {...layoutProps}>
-        <View style={styles.columnHeader}>
-          <Text style={styles.columnName}>{item.name}</Text>
-          {/* <TouchableOpacity
-            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-            onPress={() => deleteColumn(item.id)}
-          >
-            <Text>✕</Text>
-          </TouchableOpacity> */}
-        </View>
-        {columnComponent}
+      <View style={{ paddingHorizontal: 10 }}>
+        <FlatList
+          data={initPairLunchList.filter((item) => item.column === 1)}
+          renderItem={renderCard}
+          style={{ width: "100%", marginTop: 10 }}
+        />
+      </View>
+    );
+  };
+  const SecondRouteInit = () => {
+    return (
+      <View style={{ paddingHorizontal: 10 }}>
+        <FlatList
+          data={initPairLunchList.filter((item) => item.column === 2)}
+          renderItem={renderCard}
+          style={{ width: "100%", marginTop: 10 }}
+        />
+      </View>
+    );
+  };
+  const FirstRoute = () => {
+    return (
+      <View style={{ paddingHorizontal: 10 }}>
+        <FlatList
+          data={pairLunchList.filter((item) => item.column === 1)}
+          renderItem={renderCard}
+          style={{ width: "100%", marginTop: 10 }}
+        />
+      </View>
+    );
+  };
+  const SecondRoute = () => {
+    return (
+      <View style={{ paddingHorizontal: 10 }}>
+        <FlatList
+          data={pairLunchList.filter((item) => item.column === 2)}
+          renderItem={renderCard}
+          style={{ width: "100%", marginTop: 10 }}
+        />
       </View>
     );
   };
 
-  const onCardPress = (card) => {
-    console.log("Card ID: ", card.id);
-  };
+  const renderSceneInit: any = SceneMap({
+    upcoming: FirstRouteInit,
+    past: SecondRouteInit,
+  });
 
-  const onDragEnd = (fromColumnId, toColumnId, card) => {
-    //
-  };
+  const renderSceneAdd: any = SceneMap({
+    upcoming: FirstRoute,
+    past: SecondRoute,
+  });
+
+  const renderTabBar = (props) => (
+    <TabBar
+      {...props}
+      indicatorStyle={{ backgroundColor: "black" }}
+      style={{ backgroundColor: "#fd4f57" }}
+      renderLabel={({ route, focused }) => (
+        <Text style={{ color: "black", margin: 3, fontWeight: "bold" }}>
+          {route.title}
+        </Text>
+      )}
+    />
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <Board
-        style={styles.board}
-        repository={repository}
-        renderRow={renderCard}
-        renderColumnWrapper={renderColumn}
-        onRowPress={onCardPress}
-        onDragEnd={onDragEnd}
-        columnWidth={COLUMN_WIDTH}
-        // accessoryRight={
-        //   <View style={[styles.column, styles.addColumn]}>
-        //     <TouchableOpacity onPress={addColumn}>
-        //       <Text>+ Add Column</Text>
-        //     </TouchableOpacity>
-        //   </View>
-        // }
-      />
+      <TouchableOpacity
+        onPress={() => {
+          navigation.navigate("Atomic People View");
+        }}
+      >
+        <Text>Go to people</Text>
+      </TouchableOpacity>
+      {isFirstLoad === true ? (
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderSceneInit}
+          onIndexChange={setIndex}
+          initialLayout={{ width: width }}
+          renderTabBar={renderTabBar}
+          style={{ backgroundColor: "#f5f5f5" }}
+        />
+      ) : (
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderSceneAdd}
+          onIndexChange={setIndex}
+          initialLayout={{ width: width }}
+          renderTabBar={renderTabBar}
+          style={{ backgroundColor: "#f5f5f5" }}
+        />
+      )}
+
       <TouchableOpacity style={styles.addButton} onPress={toggleModal}>
         <Icon size={32} name="plus" type="font-awesome" color="white" />
       </TouchableOpacity>
@@ -407,22 +433,28 @@ const DnDBoard: FC<Props> = (props) => {
               />
             </View>
             <View style={styles.selectContainer}>
-              <Text style={styles.headerText}>Date</Text>
+              <Text style={styles.headerText}>Date/Time</Text>
               <Touchable onPress={showDatePicker}>
                 <TextInput
                   style={styles.input}
-                  placeholder={"Choose a date"}
+                  placeholder={"Choose a date and time"}
                   placeholderTextColor={"grey"}
-                  onChangeText={setDateText}
-                  value={dateText}
+                  onChangeText={setTimeText}
+                  value={timeText}
                   editable={false}
                 />
               </Touchable>
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
-                onConfirm={handleConfirm}
+                onConfirm={handleConfirmDate}
                 onCancel={hideDatePicker}
+              />
+              <DateTimePickerModal
+                isVisible={isTimePickerVisible}
+                mode="time"
+                onConfirm={handleConfirmTime}
+                onCancel={hideTimePicker}
               />
             </View>
             <View style={styles.selectContainer}>
@@ -524,6 +556,7 @@ const DnDBoard: FC<Props> = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: "100%",
   },
   header: {
     justifyContent: "center",
@@ -680,5 +713,41 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
 });
+
+const compareDates = (date) => {
+  const dateNow = new Date();
+  const compDate =
+    dateNow.toISOString().split("T")[0].split("-")[1] +
+    "-" +
+    dateNow.toISOString().split("T")[0].split("-")[2] +
+    "-" +
+    dateNow.toISOString().split("T")[0].split("-")[0];
+
+  const monthComp = date.split("/")[0];
+  const dayComp = date.split("/")[1];
+  const yearComp = date.split("/")[2];
+
+  const monthNow = compDate.split("-")[0];
+  const dayNow = compDate.split("-")[1];
+  const yearNow = compDate.split("-")[2];
+
+  if (yearComp > yearNow) {
+    return "after";
+  }
+
+  if (monthComp > monthNow) {
+    return "after";
+  }
+
+  if (dayComp > dayNow) {
+    return "after";
+  }
+
+  if (yearComp === yearNow && monthComp === monthNow && dayComp === dayNow) {
+    return "after";
+  }
+
+  return "before";
+};
 
 export { DnDBoard };
