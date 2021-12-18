@@ -184,6 +184,9 @@ export const YelpSearchFilter: FC<Props> = (props) => {
     const sortedPriceRange = priceRange.sort((a, b) => a > b);
     if (sortedPriceRange.length === 0) {
       priceString = "Price";
+      setPriceRange(priceString);
+      setPriceRangeList("1,2,3,4");
+      return;
     } else if (sortedPriceRange.length === 1) {
       priceString = getDollarSignByIndex(sortedPriceRange[0]) as string;
     } else if (listIsConsecutive(sortedPriceRange)) {
@@ -210,7 +213,6 @@ export const YelpSearchFilter: FC<Props> = (props) => {
       finalPriceString += sortedPriceRange[i] + 1;
     }
     setPriceRangeList(finalPriceString);
-    console.log(finalPriceString);
   };
 
   const getDollarSignByIndex = (index: number) => {
