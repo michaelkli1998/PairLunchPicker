@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import CountDown from "react-native-countdown-component";
-import useToggle from "../home/helpers";
+import { useToggle } from "../home/helpers";
 
 LogBox.ignoreLogs(["EventEmitter.removeListener('appStateDidChange', ...):"]); // Ignore log notification by message
 
