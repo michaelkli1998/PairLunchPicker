@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SectionList,
   SafeAreaView,
+  Keyboard,
 } from "react-native";
 import { Icon } from "react-native-elements";
 import Modal from "react-native-modal";
@@ -85,7 +86,12 @@ export const DirectoryModal: FC<Props> = (props) => {
             //   onSubmit();
             // }}
           />
-          <TouchableOpacity onPress={props.toggleVisibility}>
+          <TouchableOpacity
+            onPress={() => {
+              props.toggleVisibility();
+              Keyboard.dismiss();
+            }}
+          >
             <Icon
               size={30}
               name="times-circle"
