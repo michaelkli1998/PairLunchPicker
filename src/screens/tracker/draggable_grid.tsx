@@ -26,6 +26,7 @@ import { getRealm, getRealmLunches } from "../../core/storage/realm";
 import { PAIRLUNCHLIST_SCHEMA } from "../../core/storage/schema";
 import { Touchable } from "../../shared_components/touchable";
 import { useToggle } from "../home/helpers";
+import { DirectoryModal } from "./directory_modal";
 import { atomicPeople } from "./people_list";
 
 type Props = { atomic_people: any };
@@ -55,6 +56,11 @@ const DnDBoard: FC<Props> = (props) => {
   const [initPairLunchList, setInitPairLunchList] = useState([]);
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  const [isContactModalVisible, setContactModalVisible] = useState(false);
+  const toggleContactModal = () => {
+    setContactModalVisible(!isContactModalVisible);
+  };
 
   const { width } = useWindowDimensions();
 
@@ -321,13 +327,36 @@ const DnDBoard: FC<Props> = (props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        onPress={() => {
-          navigation.navigate("Atomic People View");
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          paddingHorizontal: 12,
+          alignItems: "center",
+          borderBottomColor: "black",
+          borderBottomWidth: 0.3,
         }}
       >
-        <Text>Go to people</Text>
-      </TouchableOpacity>
+        <Text style={styles.pairLunchTitle}>Pair Lunch Tracker</Text>
+        <TouchableOpacity
+          onPress={() => {
+            // navigation.navigate("Atomic People View");
+            toggleContactModal();
+          }}
+          style={{ position: "absolute", right: 0, marginRight: 12 }}
+        >
+          <Icon
+            size={24}
+            name="address-book"
+            type="font-awesome"
+            color="black"
+          />
+        </TouchableOpacity>
+      </View>
+      <DirectoryModal
+        isVisible={isContactModalVisible}
+        toggleVisibility={toggleContactModal}
+      />
       {isFirstLoad === true ? (
         <TabView
           navigationState={{ index, routes }}
@@ -686,6 +715,11 @@ const styles = StyleSheet.create({
   contentTitle: {
     fontSize: 24,
     marginVertical: 16,
+    fontWeight: "bold",
+  },
+  pairLunchTitle: {
+    fontSize: 20,
+    marginVertical: 10,
     fontWeight: "bold",
   },
   contentText: {

@@ -499,3 +499,170 @@ export const atomicPeople = [
     isChecked: false,
   },
 ];
+
+export const atomic_people_sorted = atomicPeople.sort((a, b) =>
+  a.name > b.name ? 1 : -1
+);
+
+export const atomicDirectory = [
+  {
+    title: "A",
+    data: [
+      atomic_people_sorted[0].name,
+      atomic_people_sorted[1].name,
+      atomic_people_sorted[2].name,
+      atomic_people_sorted[3].name,
+      atomic_people_sorted[4].name,
+    ],
+  },
+  {
+    title: "B",
+    data: [
+      atomic_people_sorted[5].name,
+      atomic_people_sorted[6].name,
+      atomic_people_sorted[7].name,
+      atomic_people_sorted[8].name,
+    ],
+  },
+  {
+    title: "C",
+    data: [
+      atomic_people_sorted[9].name,
+      atomic_people_sorted[10].name,
+      atomic_people_sorted[11].name,
+    ],
+  },
+  {
+    title: "D",
+    data: [
+      atomic_people_sorted[12].name,
+      atomic_people_sorted[13].name,
+      atomic_people_sorted[14].name,
+      atomic_people_sorted[15].name,
+      atomic_people_sorted[16].name,
+    ],
+  },
+  {
+    title: "E",
+    data: [atomic_people_sorted[17].name],
+  },
+  {
+    title: "G",
+    data: [atomic_people_sorted[18].name, atomic_people_sorted[19].name],
+  },
+  {
+    title: "J",
+    data: [
+      atomic_people_sorted[20].name,
+      atomic_people_sorted[21].name,
+      atomic_people_sorted[22].name,
+      atomic_people_sorted[23].name,
+      atomic_people_sorted[24].name,
+      atomic_people_sorted[25].name,
+      atomic_people_sorted[26].name,
+      atomic_people_sorted[27].name,
+      atomic_people_sorted[28].name,
+      atomic_people_sorted[29].name,
+      atomic_people_sorted[30].name,
+      atomic_people_sorted[31].name,
+      atomic_people_sorted[32].name,
+      atomic_people_sorted[33].name,
+      atomic_people_sorted[34].name,
+    ],
+  },
+  {
+    title: "K",
+    data: [
+      atomic_people_sorted[35].name,
+      atomic_people_sorted[36].name,
+      atomic_people_sorted[37].name,
+      atomic_people_sorted[38].name,
+      atomic_people_sorted[39].name,
+      atomic_people_sorted[40].name,
+      atomic_people_sorted[41].name,
+    ],
+  },
+  {
+    title: "L",
+    data: [
+      atomic_people_sorted[42].name,
+      atomic_people_sorted[43].name,
+      atomic_people_sorted[44].name,
+      atomic_people_sorted[45].name,
+    ],
+  },
+  {
+    title: "M",
+    data: [
+      atomic_people_sorted[46].name,
+      atomic_people_sorted[47].name,
+      atomic_people_sorted[48].name,
+      atomic_people_sorted[49].name,
+      atomic_people_sorted[50].name,
+      atomic_people_sorted[51].name,
+      atomic_people_sorted[52].name,
+      atomic_people_sorted[53].name,
+      atomic_people_sorted[54].name,
+      atomic_people_sorted[55].name,
+    ],
+  },
+  {
+    title: "N",
+    data: [
+      atomic_people_sorted[56].name,
+      atomic_people_sorted[57].name,
+      atomic_people_sorted[58].name,
+      atomic_people_sorted[59].name,
+      atomic_people_sorted[60].name,
+    ],
+  },
+  {
+    title: "P",
+    data: [
+      atomic_people_sorted[61].name,
+      atomic_people_sorted[62].name,
+      atomic_people_sorted[63].name,
+      atomic_people_sorted[64].name,
+    ],
+  },
+  {
+    title: "R",
+    data: [
+      atomic_people_sorted[65].name,
+      atomic_people_sorted[66].name,
+      atomic_people_sorted[67].name,
+      atomic_people_sorted[68].name,
+    ],
+  },
+  {
+    title: "S",
+    data: [
+      atomic_people_sorted[69].name,
+      atomic_people_sorted[70].name,
+      atomic_people_sorted[71].name,
+      atomic_people_sorted[72].name,
+      atomic_people_sorted[73].name,
+    ],
+  },
+  {
+    title: "T",
+    data: [
+      atomic_people_sorted[74].name,
+      atomic_people_sorted[75].name,
+      atomic_people_sorted[76].name,
+      atomic_people_sorted[77].name,
+    ],
+  },
+  {
+    title: "V",
+    data: [atomic_people_sorted[78].name, atomic_people_sorted[79].name],
+  },
+  {
+    title: "W",
+    data: [atomic_people_sorted[80].name],
+  },
+  {
+    title: "Z",
+    data: [atomic_people_sorted[81].name],
+  },
+];
