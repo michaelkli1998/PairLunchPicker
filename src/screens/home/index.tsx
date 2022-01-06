@@ -72,6 +72,7 @@ export const HomeScreen: FC = () => {
                 type="font-awesome"
                 color="black"
                 style={{ marginRight: 10 }}
+                tvParallaxProperties={undefined}
               />
               <Text style={styles.locationTitle}>Location: {location}</Text>
               <Icon
@@ -79,6 +80,7 @@ export const HomeScreen: FC = () => {
                 name="caret-down"
                 type="font-awesome"
                 color="black"
+                tvParallaxProperties={undefined}
               />
             </TouchableOpacity>
           </View>
@@ -145,6 +147,7 @@ export const HomeScreen: FC = () => {
             type="font-awesome"
             color="#fd4f57"
             style={{ marginBottom: 10 }}
+            tvParallaxProperties={undefined}
           />
           <Text style={styles.contentTitle}>Choose a location</Text>
           <SegmentedControlTab
@@ -163,7 +166,13 @@ export const HomeScreen: FC = () => {
             }}
             style={styles.checkButton}
           >
-            <Icon size={32} name="check" type="font-awesome" color="white" />
+            <Icon
+              size={32}
+              name="check"
+              type="font-awesome"
+              color="white"
+              tvParallaxProperties={undefined}
+            />
           </TouchableOpacity>
         </View>
       </Modal>

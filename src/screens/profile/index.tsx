@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,49 +7,116 @@ import {
   ScrollView,
   LogBox,
   SafeAreaView,
+  FlatList,
 } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import CountDown from "react-native-countdown-component";
 import { useToggle } from "../home/helpers";
+import { atomic_people_urls } from "../tracker/people_list";
+import {
+  getDBConnection,
+  getPairLunch,
+  getPairLunches,
+} from "../../core/storage/db-service";
 
 LogBox.ignoreLogs(["EventEmitter.removeListener('appStateDidChange', ...):"]); // Ignore log notification by message
 
 //@ts-ignore
 export const AtomicPeopleView: FC = ({ route }) => {
   const [ableToSchedule, toggleAbleToSchedule] = useToggle(false);
+  const [pairLunch, setPairLunch] = useState(null);
+
+  if (route.params === undefined) {
+    return null;
+  }
+
+  const atom_name = route.params.name;
+
+  const loadDataCallback = useCallback(async () => {
+    try {
+      const db = await getDBConnection();
+      const storedPairLunches = await getPairLunch(db, atom_name);
+      setPairLunch(storedPairLunches);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDataCallback();
+  }, []);
+
+  const renderCard = ({ item }) => {
+    return (
+      <View style={{ marginVertical: 5 }}>
+        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+          {item.restaurant}
+        </Text>
+        <Text>{item.date}</Text>
+      </View>
+    );
+  };
+
+  if (pairLunch === null) {
+    return null;
+  }
+  console.log(pairLunch);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={{ alignItems: "center" }}
+        // contentContainerStyle={{ alignItems: "center" }}
       >
         <View style={styles.imageContainer}>
           <Image
             style={styles.imageStyle}
-            source={require("../../images/atom_portraits/Li-Michael.jpg")}
+            source={atomic_people_urls[0][atom_name]}
           ></Image>
-          <Text style={styles.headerText}>Michael Li</Text>
+          <Text style={styles.headerText}>{atom_name}</Text>
           {ableToSchedule ? (
             <TouchableOpacity>
               <Text style={styles.subText}>Schedule a Pair Lunch</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.subText}>Schedule a pair lunch in:</Text>
+            <>
+              <Text style={styles.subText}>Schedule a pair lunch in:</Text>
+              <CountDown
+                until={10}
+                onFinish={() => {
+                  toggleAbleToSchedule();
+                }}
+                size={20}
+                digitStyle={{ backgroundColor: "#fd4f57" }}
+              />
+            </>
           )}
-          <CountDown
-            until={10000}
-            onFinish={() => toggleAbleToSchedule}
-            size={20}
-            digitStyle={{ backgroundColor: "#fd4f57" }}
-          />
         </View>
         <View style={styles.pastLunchesContainer}>
           <Text style={styles.pastLunchText}>Past Lunches</Text>
-          <Text>
-            You have no lunches with this atom. Please schedule one :)
-          </Text>
+          <View
+            style={{
+              alignContent: "flex-start",
+              width: "100%",
+              paddingHorizontal: 5,
+            }}
+          >
+            {pairLunch.map((lunch, index) => (
+              <View style={{ marginVertical: 5 }}>
+                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+                  {lunch.restaurant}
+                </Text>
+                <Text>{lunch.date}</Text>
+              </View>
+            ))}
+            {pairLunch.length === 0 && (
+              <Text>
+                You have no lunches with this atom. Please schedule one :)
+              </Text>
+            )}
+          </View>
         </View>
+        <View style={{ height: 50 }} />
       </ScrollView>
     </SafeAreaView>
   );

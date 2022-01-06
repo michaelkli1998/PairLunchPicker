@@ -1,9 +1,11 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { FC, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   Dimensions,
   FlatList,
   Image,
+  LogBox,
   Modal as RNModal,
   SafeAreaView,
   StyleSheet,
@@ -21,13 +23,22 @@ import AwesomeButton from "react-native-really-awesome-button";
 import Select2 from "react-native-select-two";
 import { SceneMap, TabBar, TabView } from "react-native-tab-view";
 import ColorPicker from "react-native-wheel-color-picker";
-import { BSON } from "realm";
-import { getRealm, getRealmLunches } from "../../core/storage/realm";
-import { PAIRLUNCHLIST_SCHEMA } from "../../core/storage/schema";
+import { ToDoItem } from "../../core/models";
+import {
+  createTable,
+  deletePairLunch,
+  getDBConnection,
+  getPairLunches,
+  savePairLunches,
+} from "../../core/storage/db-service";
 import { Touchable } from "../../shared_components/touchable";
 import { useToggle } from "../home/helpers";
 import { DirectoryModal } from "./directory_modal";
 import { atomicPeople } from "./people_list";
+
+LogBox.ignoreLogs([
+  "BSON: For React Native please polyfill crypto.getRandomValues",
+]);
 
 type Props = { atomic_people: any };
 
@@ -51,9 +62,13 @@ const DnDBoard: FC<Props> = (props) => {
 
   const [color, setColor] = useState("#ffffff");
 
-  const [pairLunchList, setPairLunchList] = useState([]);
+  const [pairLunchListUpcoming, setPairLunchListUpcoming] = useState([]);
+  const [pairLunchListPast, setPairLunchListPast] = useState([]);
 
-  const [initPairLunchList, setInitPairLunchList] = useState([]);
+  const [initPairLunchListUpcoming, setInitPairLunchListUpcoming] = useState(
+    []
+  );
+  const [initPairLunchListPast, setInitPairLunchListPast] = useState([]);
 
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
@@ -61,6 +76,9 @@ const DnDBoard: FC<Props> = (props) => {
   const toggleContactModal = () => {
     setContactModalVisible(!isContactModalVisible);
   };
+
+  const [todos, setTodos] = useState<ToDoItem[]>([]);
+  const [newTodo, setNewTodo] = useState("");
 
   const { width } = useWindowDimensions();
 
@@ -72,14 +90,163 @@ const DnDBoard: FC<Props> = (props) => {
 
   const navigation = useNavigation();
 
-  const reloadData = async () => {
-    const lunches = await getRealmLunches();
-    setInitPairLunchList(lunches);
-  };
+  const loadDataCallback = useCallback(async () => {
+    try {
+      const initPairLunches = [];
+      const db = await getDBConnection();
+      await createTable(db);
+      const storedPairLunches = await getPairLunches(db);
+      console.log(storedPairLunches);
+      if (storedPairLunches.length) {
+        const upcomingLunches = storedPairLunches.filter((lunch) => {
+          if (compareDates(lunch.date.split(" ")[0]) === "after") {
+            return true;
+          }
+          if (compareDates(lunch.date.split(" ")[0]) === "afterSame") {
+            if (compareTime(lunch.date) === "after") {
+              return true;
+            }
+            return false;
+          }
+          return false;
+        });
+        const previousLunches = storedPairLunches.filter((lunch) => {
+          if (compareDates(lunch.date.split(" ")[0]) === "after") {
+            return false;
+          }
+          if (compareDates(lunch.date.split(" ")[0]) === "afterSame") {
+            if (compareTime(lunch.date) === "after") {
+              return false;
+            }
+            return true;
+          }
+          return true;
+        });
+        setPairLunchListUpcoming(upcomingLunches);
+        setPairLunchListPast(previousLunches);
+      } else {
+        // await savePairLunches(db, initPairLunches);
+        setPairLunchListUpcoming(initPairLunches);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   useEffect(() => {
-    reloadData();
+    loadDataCallback();
   }, []);
+
+  const atomic_people = atomicPeople;
+  atomic_people.sort((a, b) => (a.name > b.name ? 1 : -1));
+
+  const addPairLunch = async () => {
+    const atom = atomic_people
+      .filter((item) => {
+        return item.id.toString() === selectedItem[0].toString();
+      })
+      .map(({ name }) => {
+        return name;
+      });
+
+    const cardCol = compareDates(dateText);
+    let colNum = 0;
+
+    if (cardCol === "after" || cardCol === "afterSame") {
+      colNum = 1;
+    } else {
+      colNum = 2;
+    }
+    try {
+      if (compareDates(timeText.split(" ")[0]) === "after") {
+        const newPairLunchList = [
+          ...pairLunchListUpcoming,
+          {
+            id: new Date().toISOString(),
+            atom: atom[0],
+            date: timeText,
+            restaurant: restaurant,
+            color: color,
+            column: colNum,
+          },
+        ];
+        setPairLunchListUpcoming(newPairLunchList);
+      } else if (compareDates(timeText.split(" ")[0]) === "afterSame") {
+        if (compareTime(timeText) === "after") {
+          const newPairLunchList = [
+            ...pairLunchListUpcoming,
+            {
+              id: new Date().toISOString(),
+              atom: atom[0],
+              date: timeText,
+              restaurant: restaurant,
+              color: color,
+              column: colNum,
+            },
+          ];
+          setPairLunchListUpcoming(newPairLunchList);
+        } else {
+          const newPairLunchList = [
+            ...pairLunchListPast,
+            {
+              id: new Date().toISOString(),
+              atom: atom[0],
+              date: timeText,
+              restaurant: restaurant,
+              color: color,
+              column: colNum,
+            },
+          ];
+          setPairLunchListPast(newPairLunchList);
+        }
+      } else {
+        const newPairLunchList = [
+          ...pairLunchListPast,
+          {
+            id: new Date().toISOString(),
+            atom: atom[0],
+            date: timeText,
+            restaurant: restaurant,
+            color: color,
+            column: colNum,
+          },
+        ];
+        setPairLunchListPast(newPairLunchList);
+      }
+      const db = await getDBConnection();
+      const storedPairLunches = await getPairLunches(db);
+      const newPairLunchList = [
+        ...storedPairLunches,
+        {
+          id: new Date().toISOString(),
+          atom: atom[0],
+          date: timeText,
+          restaurant: restaurant,
+          color: color,
+          column: colNum,
+        },
+      ];
+      await savePairLunches(db, newPairLunchList);
+      setCurrentId(currentId + 1);
+
+      setDateText("");
+      setTimeText("");
+      setRestaurant("");
+      setIsFirstLoad(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const deleteItem = async (id: number) => {
+    try {
+      const db = await getDBConnection();
+      await deletePairLunch(db, id);
+      todos.splice(id, 1);
+      setTodos(todos.slice(0));
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -131,76 +298,6 @@ const DnDBoard: FC<Props> = (props) => {
     hideTimePicker();
   };
 
-  const makeTwoDigits = (time) => {
-    const timeString = `${time}`;
-    if (timeString.length === 2) return time;
-    return `0${time}`;
-  };
-
-  const atomic_people = atomicPeople;
-  atomic_people.sort((a, b) => (a.name > b.name ? 1 : -1));
-
-  const submitPairLunch = async () => {
-    const atom = atomic_people
-      .filter((item) => {
-        return item.id.toString() === selectedItem[0].toString();
-      })
-      .map(({ name }) => {
-        return name;
-      });
-
-    const cardCol = compareDates(dateText);
-    let colNum = 0;
-
-    if (cardCol === "after") {
-      colNum = 1;
-    } else {
-      colNum = 2;
-    }
-
-    const newPairLunch = {
-      id: new BSON.ObjectId(),
-      atom: atom[0],
-      date: timeText,
-      restaurant: restaurant,
-      color: color,
-      column: colNum,
-    };
-    const realm = await getRealm();
-
-    var lunchList = [];
-    lunchList.push(newPairLunch);
-    realm.write(() => {
-      const allPairLunchLists: any = realm.objects(PAIRLUNCHLIST_SCHEMA);
-      if (allPairLunchLists[0] === undefined) {
-        const newPairLunchList = {
-          id: new BSON.ObjectId(),
-          atom: "Michael Li",
-          lunches: lunchList,
-        };
-        realm.create(PAIRLUNCHLIST_SCHEMA, newPairLunchList);
-      } else {
-        allPairLunchLists[0].lunches.push(newPairLunch);
-      }
-    });
-    let tempPairLunchList = [];
-    if (isFirstLoad) {
-      tempPairLunchList = [...initPairLunchList];
-    } else {
-      tempPairLunchList = [...pairLunchList];
-      tempPairLunchList.push(newPairLunch);
-    }
-    setPairLunchList(tempPairLunchList);
-
-    setCurrentId(currentId + 1);
-
-    // setHasResults(true);
-    setDateText("");
-    setTimeText("");
-    setRestaurant("");
-    setIsFirstLoad(false);
-  };
-
   const checkFieldsFilled = () => {
     return dateText !== "" && restaurant !== "" && selectedItem !== ""
       ? false
@@ -209,94 +306,149 @@ const DnDBoard: FC<Props> = (props) => {
 
   const renderCard = ({ item }) => {
     return (
-      <View
-        style={{
-          borderRadius: 5,
-          borderRightColor: "#F6F7FB",
-          borderTopColor: "#F6F7FB",
-          borderBottomColor: "#F6F7FB",
-          borderRightWidth: 1,
-          borderTopWidth: 1,
-          borderBottomWidth: 1,
-          borderLeftColor: item.color,
-          borderLeftWidth: 10,
-          backgroundColor: "#FFFFFF",
-          paddingRight: 24,
-          paddingLeft: 12,
-          paddingVertical: 10,
-          marginBottom: 12,
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 1,
-          },
-          shadowOpacity: 0.22,
-          shadowRadius: 2.22,
-
-          elevation: 3,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
+      <TouchableOpacity
+        onLongPress={() => {
+          Alert.alert(item.id);
+        }}
+        onPress={() => {
+          //@ts-ignore
+          navigation.navigate("Atomic People View", {
+            name: item.atom,
+          });
         }}
       >
-        <View style={{ flexDirection: "column" }}>
-          <Text style={[{ fontWeight: "bold" }, styles.cardText]}>
-            {item.atom}
-          </Text>
-          <Text style={styles.cardText}>{item.date}</Text>
-          <Text style={styles.cardText}>{item.restaurant}</Text>
-        </View>
-
-        {/* <TouchableOpacity
-          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          onPress={() => deleteCard(item.id)}
+        <View
+          style={{
+            borderRightColor: "#F6F7FB",
+            borderTopColor: "#F6F7FB",
+            borderBottomColor: "#F6F7FB",
+            borderRightWidth: 1,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderLeftColor: item.color,
+            borderLeftWidth: 10,
+            backgroundColor: "#FFFFFF",
+            paddingRight: 24,
+            paddingLeft: 12,
+            paddingVertical: 10,
+            marginVertical: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          <Text>✕</Text>
-        </TouchableOpacity> */}
-      </View>
+          <View style={{ flexDirection: "row" }}>
+            <View
+              style={{
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Icon
+                size={16}
+                name="user"
+                type="font-awesome"
+                color="black"
+                style={styles.nameIcons}
+                tvParallaxProperties={undefined}
+              />
+              <Icon
+                size={16}
+                name="calendar"
+                type="font-awesome"
+                color="black"
+                style={styles.nameIcons}
+                tvParallaxProperties={undefined}
+              />
+              <Icon
+                size={16}
+                name="map-marker"
+                type="font-awesome"
+                color="black"
+                style={styles.nameIcons}
+                tvParallaxProperties={undefined}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "flex-start",
+              }}
+            >
+              <Text style={[{ fontWeight: "bold" }, styles.cardText]}>
+                {item.atom}
+              </Text>
+              <Text style={styles.cardText}>{item.date}</Text>
+              <Text style={styles.cardText}>{item.restaurant}</Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
+  };
+
+  const handleScroll = (e) => {
+    const paddingToBottom = 20;
+    const isBottom =
+      e.nativeEvent.layoutMeasurement.height + e.nativeEvent.contentOffset.y >=
+      e.nativeEvent.contentSize.height - paddingToBottom;
+    if (
+      e.nativeEvent.layoutMeasurement.height < e.nativeEvent.contentSize.height
+    ) {
+      if (isBottom) {
+      }
+    }
   };
 
   const FirstRouteInit = () => {
     return (
-      <View style={{ paddingHorizontal: 10 }}>
+      <View style={{ height: "100%" }}>
         <FlatList
-          data={initPairLunchList.filter((item) => item.column === 1)}
+          data={initPairLunchListUpcoming}
           renderItem={renderCard}
-          style={{ width: "100%", marginTop: 10 }}
+          style={{ width: "100%", marginTop: 2 }}
+          onScroll={handleScroll}
         />
       </View>
     );
   };
   const SecondRouteInit = () => {
     return (
-      <View style={{ paddingHorizontal: 10 }}>
+      <View style={{ height: "100%" }}>
         <FlatList
-          data={initPairLunchList.filter((item) => item.column === 2)}
+          data={initPairLunchListPast}
           renderItem={renderCard}
-          style={{ width: "100%", marginTop: 10 }}
+          style={{ width: "100%", marginTop: 2 }}
+          onScroll={handleScroll}
         />
       </View>
     );
   };
   const FirstRoute = () => {
     return (
-      <View style={{ paddingHorizontal: 10 }}>
+      <View style={{ height: "100%" }}>
         <FlatList
-          data={pairLunchList.filter((item) => item.column === 1)}
+          data={pairLunchListUpcoming}
           renderItem={renderCard}
-          style={{ width: "100%", marginTop: 10 }}
+          style={{ width: "100%", marginTop: 2 }}
+          onScroll={handleScroll}
         />
       </View>
     );
   };
   const SecondRoute = () => {
     return (
-      <View style={{ paddingHorizontal: 10 }}>
+      <View style={{ height: "100%" }}>
         <FlatList
-          data={pairLunchList.filter((item) => item.column === 2)}
+          data={pairLunchListPast}
           renderItem={renderCard}
-          style={{ width: "100%", marginTop: 10 }}
+          style={{
+            width: "100%",
+            marginTop: 2,
+          }}
+          onScroll={handleScroll}
         />
       </View>
     );
@@ -340,16 +492,21 @@ const DnDBoard: FC<Props> = (props) => {
         <Text style={styles.pairLunchTitle}>Pair Lunch Tracker</Text>
         <TouchableOpacity
           onPress={() => {
-            // navigation.navigate("Atomic People View");
             toggleContactModal();
           }}
-          style={{ position: "absolute", right: 0, marginRight: 12 }}
+          style={{
+            position: "absolute",
+            right: 0,
+            marginRight: 12,
+            padding: 5,
+          }}
         >
           <Icon
             size={24}
             name="address-book"
             type="font-awesome"
             color="black"
+            tvParallaxProperties={undefined}
           />
         </TouchableOpacity>
       </View>
@@ -357,28 +514,23 @@ const DnDBoard: FC<Props> = (props) => {
         isVisible={isContactModalVisible}
         toggleVisibility={toggleContactModal}
       />
-      {isFirstLoad === true ? (
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderSceneInit}
-          onIndexChange={setIndex}
-          initialLayout={{ width: width }}
-          renderTabBar={renderTabBar}
-          style={{ backgroundColor: "#f5f5f5" }}
-        />
-      ) : (
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderSceneAdd}
-          onIndexChange={setIndex}
-          initialLayout={{ width: width }}
-          renderTabBar={renderTabBar}
-          style={{ backgroundColor: "#f5f5f5" }}
-        />
-      )}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderSceneAdd}
+        onIndexChange={setIndex}
+        initialLayout={{ width: width }}
+        renderTabBar={renderTabBar}
+        style={{ backgroundColor: "#f5f5f5" }}
+      />
 
       <TouchableOpacity style={styles.addButton} onPress={toggleModal}>
-        <Icon size={32} name="plus" type="font-awesome" color="white" />
+        <Icon
+          size={32}
+          name="plus"
+          type="font-awesome"
+          color="white"
+          tvParallaxProperties={undefined}
+        />
       </TouchableOpacity>
       <RNModal
         visible={isModalVisible}
@@ -504,7 +656,7 @@ const DnDBoard: FC<Props> = (props) => {
               onPress={() => {
                 setTimeout(() => {
                   toggleModal();
-                  submitPairLunch();
+                  addPairLunch();
                 }, 1000);
               }}
               stretch
@@ -561,6 +713,7 @@ const DnDBoard: FC<Props> = (props) => {
                   name="check"
                   type="font-awesome"
                   color="white"
+                  tvParallaxProperties={undefined}
                 />
               </TouchableOpacity>
             </View>
@@ -569,6 +722,7 @@ const DnDBoard: FC<Props> = (props) => {
               thumbSize={40}
               sliderSize={40}
               noSnap={true}
+              //@ts-ignore
               onColorChangeComplete={setColor}
               row={false}
               swatchesLast
@@ -745,10 +899,16 @@ const styles = StyleSheet.create({
   },
   cardText: {
     marginVertical: 2,
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  nameIcons: {
+    marginVertical: 2,
   },
 });
 
 const compareDates = (date) => {
+  console.log(date);
   const dateNow = new Date();
   const compDate =
     dateNow.toISOString().split("T")[0].split("-")[1] +
@@ -769,19 +929,70 @@ const compareDates = (date) => {
     return "after";
   }
 
+  if (yearComp < yearNow) {
+    return "before";
+  }
+
   if (monthComp > monthNow) {
     return "after";
+  }
+
+  if (monthComp < monthNow) {
+    return "before";
   }
 
   if (dayComp > dayNow) {
     return "after";
   }
 
+  if (dayComp < dayNow) {
+    return "before";
+  }
+
   if (yearComp === yearNow && monthComp === monthNow && dayComp === dayNow) {
-    return "after";
+    return "afterSame";
   }
 
   return "before";
+};
+
+const compareTime = (lunch) => {
+  const timeLunch = lunch.split(" ")[2] as string;
+  const date = new Date();
+  let hours = date.getHours();
+  let minutes = makeTwoDigits(date.getMinutes());
+  const isAMPM = timeLunch.slice(timeLunch.length - 2, timeLunch.length - 1);
+  let newHours = 0;
+  let newMinutes = parseInt(timeLunch.split(":")[1].substr(0, 2));
+  if (isAMPM === "pm") {
+    newHours = parseInt(timeLunch.split(":")[0]) + 12;
+  } else {
+    newHours = parseInt(timeLunch.split(":")[0]);
+  }
+
+  if (newHours > hours) {
+    return "after";
+  }
+
+  if (newHours < hours) {
+    return "before";
+  }
+
+  if (newMinutes > minutes) {
+    return "after";
+  }
+
+  if (newMinutes < minutes) {
+    return "before";
+  }
+
+  return "after";
+};
+
+const makeTwoDigits = (time) => {
+  const timeString = `${time}`;
+  if (timeString.length === 2) return time;
+  return `0${time}`;
 };
 
 export { DnDBoard };

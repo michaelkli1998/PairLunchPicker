@@ -18,6 +18,9 @@ import Spinner from "react-native-spinkit";
 import { yelpBusinessResponse, yelpReviewResponse } from "../../types";
 import Carousel from "react-native-banner-carousel";
 import Swiper from "react-native-swiper";
+import SystemNavigationBar from "react-native-system-navigation-bar";
+
+SystemNavigationBar.setNavigationColor("#fd4f57");
 
 const config = {
   headers: {
@@ -80,7 +83,11 @@ export const DetailedRestaurantView: FC = ({ route }) => {
   const [busImages, setBusImages] = useState([]);
 
   const BannerWidth = Dimensions.get("window").width;
-  const BannerHeight = 230;
+  // const SLIDER_WIDTH = Dimensions.get("window").width;
+  // const SLIDER_HEIGHT = Dimensions.get("window").height;
+  // const ITEM_WIDTH = Math.round(SLIDER_WIDTH * 0.9);
+  // const ITEM_HEIGHT = Math.round((ITEM_WIDTH * 3) / 4);
+  const BannerHeight = Dimensions.get("window").height / 3 - 15;
 
   useEffect(() => {
     axios
@@ -311,6 +318,7 @@ export const DetailedRestaurantView: FC = ({ route }) => {
                 type="font-awesome"
                 color="#fd4f57"
                 style={{ marginTop: 10, marginRight: 8 }}
+                tvParallaxProperties={undefined}
               />
               <Text style={styles.title}>{business.display_phone}</Text>
             </TouchableOpacity>
@@ -322,6 +330,7 @@ export const DetailedRestaurantView: FC = ({ route }) => {
               type="font-awesome"
               color="#fd4f57"
               style={{ marginTop: 10, marginRight: 8 }}
+              tvParallaxProperties={undefined}
             />
             <Text style={styles.title}>
               {route.params.restaurant.location.address1}.
@@ -460,7 +469,7 @@ const styles = StyleSheet.create({
   },
   bottomModal: {
     height: "100%",
-    backgroundColor: "white"
+    backgroundColor: "white",
   },
   modalUp: {
     position: "absolute",
@@ -499,6 +508,6 @@ const styles = StyleSheet.create({
   },
   ratingsContainer: {},
   wrapper: {
-    height: 245,
+    height: SLIDER_HEIGHT / 3,
   },
 });

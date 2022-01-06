@@ -1,31 +1,5 @@
-import React, { FC, useRef, useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Button,
-  Modal as RNModal,
-  SafeAreaView,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StatusBar,
-} from "react-native";
-import { Icon } from "react-native-elements";
-import Select2 from "react-native-select-two";
-import { atomicPeople } from "./people_list";
-import { LogBox } from "react-native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { TouchableOpacity as AltTouchableOpacity } from "react-native-gesture-handler";
-import AwesomeButton from "react-native-really-awesome-button";
-import { Touchable } from "../../shared_components/touchable";
-import BrickList from "react-native-masonry-brick-list";
-import LinearGradient from "react-native-linear-gradient";
-import ColorPicker from "react-native-wheel-color-picker";
-import useToggle from "../home/helpers";
-import Modal from "react-native-modal";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import React, { FC, useState } from "react";
+import { LogBox, SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { DnDBoard } from "./draggable_grid";
 LogBox.ignoreLogs(["Animated: `useNativeDriver` was not specified."]); // Ignore log notification by message
 LogBox.ignoreLogs(["Module RNBubbleSelectNodeViewManager"]); // Ignore log notification by message

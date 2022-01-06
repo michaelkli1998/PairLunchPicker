@@ -69,6 +69,7 @@ export const FilterModal: FC<Props> = (props) => {
             type="font-awesome"
             color="#fd4f57"
             style={{ marginBottom: 10 }}
+            tvParallaxProperties={undefined}
           />
           <Text style={styles.contentTitle}>Choose a price range</Text>
           <SegmentedControlTab
@@ -88,7 +89,13 @@ export const FilterModal: FC<Props> = (props) => {
             }}
             style={styles.checkButton}
           >
-            <Icon size={32} name="check" type="font-awesome" color="white" />
+            <Icon
+              size={32}
+              name="check"
+              type="font-awesome"
+              color="white"
+              tvParallaxProperties={undefined}
+            />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -109,6 +116,7 @@ export const FilterModal: FC<Props> = (props) => {
             type="font-awesome"
             color="#fd4f57"
             style={{ marginBottom: 10 }}
+            tvParallaxProperties={undefined}
           />
           <Text style={styles.contentTitle}>Sort by</Text>
           <SegmentedControlTab
@@ -127,7 +135,13 @@ export const FilterModal: FC<Props> = (props) => {
             }}
             style={styles.checkButton}
           >
-            <Icon size={32} name="check" type="font-awesome" color="white" />
+            <Icon
+              size={32}
+              name="check"
+              type="font-awesome"
+              color="white"
+              tvParallaxProperties={undefined}
+            />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -148,6 +162,7 @@ export const FilterModal: FC<Props> = (props) => {
             type="font-awesome"
             color="#fd4f57"
             style={{ marginBottom: 10 }}
+            tvParallaxProperties={undefined}
           />
           <Text style={styles.contentTitle}>Rating</Text>
           <SegmentedControlTab
@@ -166,7 +181,13 @@ export const FilterModal: FC<Props> = (props) => {
             }}
             style={styles.checkButton}
           >
-            <Icon size={32} name="check" type="font-awesome" color="white" />
+            <Icon
+              size={32}
+              name="check"
+              type="font-awesome"
+              color="white"
+              tvParallaxProperties={undefined}
+            />
           </TouchableOpacity>
         </View>
       </Modal>

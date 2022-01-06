@@ -27,7 +27,7 @@ export const YelpCarouselDiscover: FC<Props> = (props) => {
         "Bearer eu70nmGiCTtxJgzg5h3uL1M3rXa3YTsCpz92As8TQw4B5CJ7A0T37rnZ1n84OEvPgGZNNJi9BuYcjH1wj0Vql0P08jsYBEUjkjK0KPVDXUM4veb3jrZzSVwkQ9r4YHYx",
     },
     params: {
-      term: "food",
+      term: "restaurants",
       location: getAddress(props.location),
       radius: 1609,
       offset: RandomNumber,

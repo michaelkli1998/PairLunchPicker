@@ -1,33 +1,32 @@
+import { useNavigation } from "@react-navigation/native";
 import React, { FC, useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  TouchableOpacity,
-  SectionList,
-  SafeAreaView,
   Keyboard,
+  SafeAreaView,
+  SectionList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Icon } from "react-native-elements";
 import Modal from "react-native-modal";
 import SearchBar from "react-native-search-bar";
-import SegmentedControlTab from "react-native-segmented-control-tab";
-import {
-  atomicDirectory,
-  atomic_people,
-  atomic_people_sorted,
-} from "./people_list";
+import { atomicDirectory, atomic_people } from "./people_list";
 
 type Props = { toggleVisibility: () => void; isVisible: boolean };
 
 export const DirectoryModal: FC<Props> = (props) => {
   const searchRef = useRef<SearchBar>();
+  const textInputRef = useRef<TextInput>();
   const [searchQuery, setSearchQuery] = useState("");
   const [aD, setAD] = useState(atomicDirectory);
 
+  const navigation = useNavigation();
+
   useEffect(() => {
-    searchRef.current?.focus();
+    textInputRef.current?.focus();
   }, []);
 
   const onTextChange = (text: string) => {
@@ -67,50 +66,78 @@ export const DirectoryModal: FC<Props> = (props) => {
         <View
           style={{
             flexDirection: "row",
-            paddingVertical: 12,
+            paddingBottom: 12,
             alignItems: "center",
           }}
         >
-          <SearchBar
-            placeholder="Search"
-            ref={searchRef}
-            hideBackground={true}
-            textFieldBackgroundColor={"#f0f0f0"}
-            searchBarStyle={"default"}
-            showsCancelButtonWhileEditing={false}
-            text={searchQuery}
-            onChangeText={onTextChange}
-            onCancelButtonPress={props.toggleVisibility}
-            style={{ flex: 1, height: 30 }}
-            // onSearchButtonPress={() => {
-            //   onSubmit();
-            // }}
-          />
+          <View style={styles.inputTextContainer}>
+            <Icon
+              size={18}
+              name="search"
+              type="font-awesome"
+              color="grey"
+              tvParallaxProperties={undefined}
+              style={{ marginRight: 6, marginBottom: 2, zIndex: 0 }}
+            />
+            <TextInput
+              ref={textInputRef}
+              placeholder={"Search"}
+              placeholderTextColor={"grey"}
+              onChangeText={onTextChange}
+              value={searchQuery}
+              editable={true}
+              onSubmitEditing={() => {
+                Keyboard.dismiss();
+                textInputRef.current.blur();
+              }}
+              style={[
+                {
+                  fontSize: 18,
+                },
+                styles.inputText,
+              ]}
+            />
+          </View>
           <TouchableOpacity
             onPress={() => {
               props.toggleVisibility();
               Keyboard.dismiss();
+              textInputRef.current.blur();
             }}
+            style={{ padding: 5, marginRight: 5 }}
           >
             <Icon
               size={30}
               name="times-circle"
               type="font-awesome"
               color="#fd4f57"
-              style={{ marginRight: 10 }}
+              tvParallaxProperties={undefined}
             />
           </TouchableOpacity>
         </View>
         <SectionList
           sections={aD}
           renderItem={({ item }) => (
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                //@ts-ignore
+                navigation.navigate("Atomic People View", {
+                  name: item,
+                });
+                props.toggleVisibility();
+              }}
+            >
               <Text style={styles.item}>{item}</Text>
             </TouchableOpacity>
           )}
+          onScroll={() => {
+            Keyboard.dismiss();
+            textInputRef.current.blur();
+          }}
           renderSectionHeader={({ section }) => (
             <Text style={styles.sectionHeader}>{section.title}</Text>
           )}
+          //@ts-ignore
           keyExtractor={(item, index) => index}
         />
       </SafeAreaView>
@@ -165,5 +192,28 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 18,
     height: 44,
+  },
+  inputTextContainer: {
+    borderWidth: 1,
+    padding: 8,
+    backgroundColor: "white",
+    borderColor: "lightgrey",
+    borderRadius: 5,
+    height: 39,
+    color: "black",
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginHorizontal: 7,
+  },
+  inputText: {
+    padding: 8,
+    backgroundColor: "white",
+    height: 37,
+    color: "black",
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 10,
+    minWidth: "70%",
   },
 });

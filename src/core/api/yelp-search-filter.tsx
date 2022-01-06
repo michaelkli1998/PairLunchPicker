@@ -15,10 +15,14 @@ import {
   useWindowDimensions,
   View,
   Image,
+  TextInput,
 } from "react-native";
-import { Icon } from "react-native-elements";
+import { Icon, SearchBar as RNSearchBar } from "react-native-elements";
 import { ScreenHeight } from "react-native-elements/dist/helpers";
-import { TouchableOpacity } from "react-native-gesture-handler";
+import {
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+} from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Modal from "react-native-modal";
 import SearchBar from "react-native-search-bar";
@@ -32,6 +36,7 @@ import {
   filterCategories,
   FilterModal,
 } from "../../shared_components/filter_modal";
+import { Touchable } from "../../shared_components/touchable";
 
 type Props = { location?: string };
 
@@ -69,6 +74,7 @@ export const YelpSearchFilter: FC<Props> = (props) => {
   const [openToggle, setOpenToggle] = useToggleTrue();
 
   const searchRef = useRef<SearchBar>();
+  const textInputRef = useRef<TextInput>();
 
   const flatListRef = useRef<FlatList>();
 
@@ -332,239 +338,286 @@ export const YelpSearchFilter: FC<Props> = (props) => {
 
   return (
     <View>
-      <Animated.View
-        style={[
-          styles.searchContainer,
-          {
-            width: shrinkWidth,
-            transform: [{ translateX: translateRight }],
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            const a = new Promise((resolve, reject) => {
-              setTimeout(() => resolve("timeout"), 0);
-            });
-            a.then(() => {
-              // fadeInModal();
-              searchRef.current?.focus();
-            });
-            a.catch(console.log);
-            fadeIn();
-            slideDown();
-            setDisplayFilter(true);
-            setEditable(true);
-          }}
-        >
-          <SearchBar
-            placeholder="Search"
-            ref={searchRef}
-            editable={editable}
-            hideBackground={true}
-            textFieldBackgroundColor={"white"}
-            searchBarStyle={"default"}
-            showsCancelButtonWhileEditing={false}
-            text={searchQuery}
-            onChangeText={setSearchQuery}
-            onSearchButtonPress={() => {
-              onSubmit();
-            }}
-          />
-        </TouchableOpacity>
-      </Animated.View>
-      <Animated.View
-        style={{
-          marginHorizontal: 10,
-          opacity: fadeAnimation,
-          display: displayFilter ? "flex" : "none",
+      <TouchableWithoutFeedback
+        onPress={() => {
+          Keyboard.dismiss();
+          // searchRef.current.blur();
+          textInputRef.current.blur();
         }}
       >
-        <ScrollView horizontal={true}>
-          <TouchableOpacity
+        <Animated.View
+          style={[
+            styles.searchContainer,
+            {
+              width: shrinkWidth,
+              transform: [{ translateX: translateRight }],
+            },
+          ]}
+        >
+          <Touchable
             onPress={() => {
-              setFilterCategory(filterCategories.sortBy);
-              toggleModal();
+              const a = new Promise((resolve, reject) => {
+                setTimeout(() => resolve("timeout"), 0);
+              });
+              a.then(() => {
+                // fadeInModal();
+                // searchRef.current?.focus();
+                textInputRef.current?.focus();
+              });
+              a.catch(console.log);
+              fadeIn();
+              slideDown();
+              setDisplayFilter(true);
+              setEditable(true);
             }}
           >
-            <View style={styles.filterContainerSelected}>
+            {/* <SearchBar
+              placeholder="Search"
+              ref={searchRef}
+              editable={editable}
+              hideBackground={true}
+              textFieldBackgroundColor={"white"}
+              searchBarStyle={"default"}
+              showsCancelButtonWhileEditing={false}
+              text={searchQuery}
+              onChangeText={setSearchQuery}
+              onSearchButtonPress={() => {
+                onSubmit();
+                Keyboard.dismiss();
+                searchRef.current.blur();
+              }}
+            /> */}
+            <View style={styles.inputTextContainer}>
               <Icon
-                size={16}
-                name="caret-down"
+                size={18}
+                name="search"
                 type="font-awesome"
-                color="black"
+                color="grey"
+                tvParallaxProperties={undefined}
+                style={{ marginRight: 6, marginBottom: 2, zIndex: 0 }}
               />
-              <Text style={styles.filterTextCarrot}>{sortByCriteria}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setFilterCategory(filterCategories.price);
-              toggleModal();
-            }}
-          >
-            <View
-              style={
-                priceRange !== "Price"
-                  ? styles.filterContainerSelected
-                  : styles.filterContainer
-              }
-            >
-              <Icon
-                size={16}
-                name="caret-down"
-                type="font-awesome"
-                color="black"
+              <TextInput
+                ref={textInputRef}
+                placeholder={"Search"}
+                placeholderTextColor={"grey"}
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+                editable={editable}
+                onSubmitEditing={() => {
+                  onSubmit();
+                  Keyboard.dismiss();
+                  textInputRef.current.blur();
+                }}
+                style={[
+                  {
+                    fontSize: 18,
+                  },
+                  styles.inputText,
+                ]}
               />
-              <Text style={styles.filterTextCarrot}>{priceRange}</Text>
             </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setOpenToggle();
-              // onSubmit();
-            }}
-          >
-            <View
-              style={
-                openToggle
-                  ? styles.filterContainerSelected
-                  : styles.filterContainer
-              }
-            >
-              <Text style={styles.filterText}>Open</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setVisitedToggle();
-              // onSubmit();
-            }}
-          >
-            <View
-              style={
-                visitedToggle
-                  ? styles.filterContainerSelected
-                  : styles.filterContainer
-              }
-            >
-              <Text style={styles.filterText}>Visited</Text>
-            </View>
-          </TouchableOpacity>
-        </ScrollView>
-      </Animated.View>
-      <Animated.View
-        style={[
-          styles.listContainer,
-          {
-            height: height,
+          </Touchable>
+        </Animated.View>
+        <Animated.View
+          style={{
+            marginHorizontal: 10,
             opacity: fadeAnimation,
             display: displayFilter ? "flex" : "none",
-          },
-        ]}
-      >
-        {isLoading ? (
-          <View style={styles.telescopeView}>
-            <Spinner
-              isVisible={true}
-              size={40}
-              type={"ThreeBounce"}
-              color={"black"}
-            />
-          </View>
-        ) : (
-          <View
-            style={[
-              styles.telescopeView,
-              {
-                display: initialLoad ? "none" : "flex",
-              },
-            ]}
-          >
-            <Image
-              source={require("../../images/atomic_telescope.png")}
-              style={styles.telescope}
-            />
-            {config !== null && restaurants.length === 0 ? (
-              <Text style={styles.searchText}>No restaurants found...</Text>
-            ) : (
-              <Text style={styles.searchText}>Search for a restaurant...</Text>
-            )}
-          </View>
-        )}
-        {initialLoad && (
-          <View style={styles.searchCarousel}>
-            <Text style={styles.resultText}>
-              {restaurants.length + " restaurants found"}
-            </Text>
-            <FlatList
-              data={restaurants}
-              ref={flatListRef}
-              keyExtractor={({ id }) => id.toString()}
-              renderItem={_renderItem}
-              ListFooterComponent={
-                <View
-                  style={{
-                    height: 350,
-                    flexDirection: "row",
-                    justifyContent: "center",
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => {
-                      flatListRef.current.scrollToOffset({
-                        animated: true,
-                        offset: 0,
-                      });
-                    }}
-                  >
-                    <Icon
-                      size={25}
-                      name="arrow-up"
-                      type="font-awesome"
-                      color="black"
-                    />
-                    <Text>Back to top</Text>
-                  </TouchableOpacity>
-                </View>
-              }
-            />
-          </View>
-        )}
-      </Animated.View>
-      <Animated.View
-        style={{
-          position: "absolute",
-          justifyContent: "center",
-          paddingTop: 15,
-          opacity: fadeAnimation,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            fadeOut();
-            slideUp();
-            setEditable(false);
-            setSearchQuery("");
-            setDisplayFilter(false);
-            searchRef.current.blur();
           }}
         >
-          <Icon
-            size={25}
-            name="arrow-left"
-            type="font-awesome"
-            color="black"
-            style={{ marginRight: 10, marginLeft: 15 }}
-          />
-        </TouchableOpacity>
-      </Animated.View>
-      <FilterModal
-        isVisible={isModalVisible}
-        toggleVisibility={toggleModal}
-        category={filterCategory}
-        handleResponse={handleResponse}
-      />
+          <ScrollView horizontal={true}>
+            <TouchableOpacity
+              onPress={() => {
+                setFilterCategory(filterCategories.sortBy);
+                toggleModal();
+              }}
+            >
+              <View style={styles.filterContainerSelected}>
+                <Icon
+                  size={16}
+                  name="caret-down"
+                  type="font-awesome"
+                  color="black"
+                  tvParallaxProperties={undefined}
+                />
+                <Text style={styles.filterTextCarrot}>{sortByCriteria}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setFilterCategory(filterCategories.price);
+                toggleModal();
+              }}
+            >
+              <View
+                style={
+                  priceRange !== "Price"
+                    ? styles.filterContainerSelected
+                    : styles.filterContainer
+                }
+              >
+                <Icon
+                  size={16}
+                  name="caret-down"
+                  type="font-awesome"
+                  color="black"
+                  tvParallaxProperties={undefined}
+                />
+                <Text style={styles.filterTextCarrot}>{priceRange}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setOpenToggle();
+                // onSubmit();
+              }}
+            >
+              <View
+                style={
+                  openToggle
+                    ? styles.filterContainerSelected
+                    : styles.filterContainer
+                }
+              >
+                <Text style={styles.filterText}>Open</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setVisitedToggle();
+                // onSubmit();
+              }}
+            >
+              <View
+                style={
+                  visitedToggle
+                    ? styles.filterContainerSelected
+                    : styles.filterContainer
+                }
+              >
+                <Text style={styles.filterText}>Visited</Text>
+              </View>
+            </TouchableOpacity>
+          </ScrollView>
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.listContainer,
+            {
+              height: height,
+              opacity: fadeAnimation,
+              display: displayFilter ? "flex" : "none",
+            },
+          ]}
+        >
+          {isLoading ? (
+            <View style={styles.telescopeView}>
+              <Spinner
+                isVisible={true}
+                size={40}
+                type={"ThreeBounce"}
+                color={"black"}
+              />
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.telescopeView,
+                {
+                  display: initialLoad ? "none" : "flex",
+                },
+              ]}
+            >
+              <Image
+                source={require("../../images/atomic_telescope.png")}
+                style={styles.telescope}
+              />
+              {config !== null && restaurants.length === 0 ? (
+                <Text style={styles.searchText}>No restaurants found...</Text>
+              ) : (
+                <Text style={styles.searchText}>
+                  Search for a restaurant...
+                </Text>
+              )}
+            </View>
+          )}
+          {initialLoad && (
+            <View style={styles.searchCarousel}>
+              <Text style={styles.resultText}>
+                {restaurants.length + " restaurants found"}
+              </Text>
+              <FlatList
+                data={restaurants}
+                ref={flatListRef}
+                keyExtractor={({ id }) => id.toString()}
+                renderItem={_renderItem}
+                ListFooterComponent={
+                  <View
+                    style={{
+                      height: 350,
+                      flexDirection: "row",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => {
+                        flatListRef.current.scrollToOffset({
+                          animated: true,
+                          offset: 0,
+                        });
+                      }}
+                    >
+                      <Icon
+                        size={25}
+                        name="arrow-up"
+                        type="font-awesome"
+                        color="black"
+                        tvParallaxProperties={undefined}
+                      />
+                      <Text>Back to top</Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
+            </View>
+          )}
+        </Animated.View>
+        <Animated.View
+          style={{
+            position: "absolute",
+            justifyContent: "center",
+            paddingTop: 12,
+            opacity: fadeAnimation,
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              fadeOut();
+              slideUp();
+              setEditable(false);
+              setSearchQuery("");
+              setDisplayFilter(false);
+              // searchRef.current.blur();
+              textInputRef.current.blur();
+            }}
+          >
+            <Icon
+              size={25}
+              name="arrow-left"
+              type="font-awesome"
+              color="black"
+              style={{ marginRight: 10, marginLeft: 15 }}
+              tvParallaxProperties={undefined}
+            />
+          </TouchableOpacity>
+        </Animated.View>
+        <FilterModal
+          isVisible={isModalVisible}
+          toggleVisibility={toggleModal}
+          category={filterCategory}
+          handleResponse={handleResponse}
+        />
+      </TouchableWithoutFeedback>
     </View>
   );
 };
@@ -593,7 +646,9 @@ const styles = StyleSheet.create({
   searchContainer: {
     width: "100%",
     alignSelf: "center",
-    marginVertical: Platform.OS === "ios" ? 0 : 10,
+    paddingHorizontal: 5,
+    marginTop: 5,
+    marginBottom: 10,
   },
   listContainer: {
     width: "100%",
@@ -620,6 +675,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 2,
     color: "black",
+  },
+  inputTextContainer: {
+    borderWidth: 1,
+    padding: 8,
+    minWidth: "100%",
+    backgroundColor: "white",
+    borderColor: "lightgrey",
+    borderRadius: 5,
+    height: 39,
+    color: "black",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputText: {
+    padding: 8,
+    width: "90%",
+    backgroundColor: "white",
+    height: 37,
+    color: "black",
+    flexDirection: "row",
+    alignItems: "center",
+    textAlignVertical: "center",
   },
   tempView: {
     flexDirection: "row",
